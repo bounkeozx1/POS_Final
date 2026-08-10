@@ -15,3 +15,6 @@ Desktop.ini
 
 # Uploaded files at runtime (keep the seeded menu images)
 images/uploads/
+
+# Per-machine DB overrides (port / password) — must never be shared
+api/config.local.php
