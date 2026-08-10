@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0c0c10">
+  <title>The Ground Camp · Admin Dashboard</title>
+  <link rel="stylesheet" href="admin-style.css?v=14">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<base target="_blank">
+</head>
+<body>
+
+  <!-- ════════════════════════════════
+       LOGIN SCREEN
+  ════════════════════════════════ -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-bg">
+      <div class="login-orb login-orb1"></div>
+      <div class="login-orb login-orb2"></div>
+    </div>
+    <!-- Language switcher on login -->
+    <div class="login-lang-wrap" id="loginLangMount"></div>
+    <div class="login-font-wrap">
+      <div class="font-controls" aria-label="ปรับขนาดตัวอักษร">
+        <button class="font-btn" type="button" onclick="changeUiFontSize(-1)" title="ลดขนาดตัวอักษร">A-</button>
+        <button class="font-btn font-size-label" type="button" onclick="resetUiFontSize()" title="รีเซ็ตขนาดตัวอักษร">110%</button>
+        <button class="font-btn" type="button" onclick="changeUiFontSize(1)" title="เพิ่มขนาดตัวอักษร">A+</button>
+      </div>
+    </div>
+    <div class="login-theme-wrap">
+      <button class="theme-toggle" type="button" onclick="toggleThemeMode()" aria-label="Toggle light and dark mode">
+        <span class="theme-toggle-text">Dark</span>
+      </button>
+    </div>
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">⚡</div>
+        <div>
+          <div class="login-logo-title">The Ground Camp</div>
+          <div class="login-logo-sub" data-i18n="admin.panel">Admin Panel</div>
+        </div>
+      </div>
+      <div class="login-form">
+        <div class="lf-group">
+          <label data-i18n="login.username">ຊື່ຜູ້ໃຊ້</label>
+          <input type="text" id="loginUser" value="admin" placeholder="admin" autocomplete="username">
+        </div>
+        <div class="lf-group">
+          <label data-i18n="login.password">ລະຫັດຜ່ານ</label>
+          <div class="pw-wrap">
+            <input type="password" id="loginPass" value="1234" placeholder="••••••••" autocomplete="current-password">
+            <button class="pw-toggle" onclick="togglePw()">👁</button>
+          </div>
+        </div>
+        <div class="login-error" id="loginError"></div>
+        <button class="login-btn" onclick="doLogin()"><span data-i18n="login.btn">เข้าสู่ระบบ</span></button>
+      </div>
+      <div class="login-hint"><span data-i18n="login.hint">admin / 1234</span></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       APP SHELL
+  ════════════════════════════════ -->
+  <div class="app-shell" id="appShell" style="display:none">
+
+    <!-- ── SIDEBAR (Desktop) ── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sb-header">
+        <div class="sb-logo">
+          <span class="sb-logo-icon">⚡</span>
+          <div>
+            <div class="sb-title">The Ground Camp</div>
+            <div class="sb-sub">Admin Panel</div>
+          </div>
+        </div>
+        <button class="sb-collapse" id="sbCollapse" onclick="toggleSidebar()" data-i18n-title="tooltip.collapse">‹</button>
+      </div>
+
+      <nav class="sb-nav">
+        <div class="sb-section-label" data-i18n="menu.main">เมนูหลัก</div>
+        <button class="sb-item active" data-page="dashboard" onclick="navTo('dashboard', this)">
+          <span class="sb-icon">📊</span><span class="sb-label" data-i18n="admin.dashboard">Dashboard</span>
+        </button>
+        <button class="sb-item" data-page="orders" onclick="navTo('orders', this)">
+          <span class="sb-icon">📦</span><span class="sb-label" data-i18n="admin.orders">คำสั่งซื้อ</span>
+          <span class="sb-badge" id="sbBadgeOrders">0</span>
+        </button>
+        <button class="sb-item" data-page="products" onclick="navTo('products', this)">
+          <span class="sb-icon">🍽️</span><span class="sb-label" data-i18n="admin.products">สินค้า / เมนู</span>
+        </button>
+        <button class="sb-item" data-page="inventory" onclick="navTo('inventory', this)">
+          <span class="sb-icon">📋</span><span class="sb-label" data-i18n="admin.inventory">สต็อกสินค้า</span>
+        </button>
+        <button class="sb-item" data-page="materials" onclick="navTo('materials', this)">
+          <span class="sb-icon">🥩</span><span class="sb-label">ຈັດການວັດຖຸດິບ</span>
+        </button>
+        <button class="sb-item" data-page="categories" onclick="navTo('categories', this)">
+          <span class="sb-icon">🏷️</span><span class="sb-label">ຈັດການປະເພດ</span>
+        </button>
+        <button class="sb-item" data-page="purchase" onclick="navTo('purchase', this)">
+          <span class="sb-icon">🧾</span><span class="sb-label">ສັ່ງຊື້ (Purchase)</span>
+        </button>
+        <button class="sb-item" data-page="import" onclick="navTo('import', this)">
+          <span class="sb-icon">📥</span><span class="sb-label">ນຳເຂົ້າ (Import)</span>
+        </button>
+        <button class="sb-item" data-page="tables" onclick="navTo('tables', this)">
+          <span class="sb-icon">🪑</span><span class="sb-label">ຈັດການໂຕະ</span>
+        </button>
+        <button class="sb-item" data-page="kitchen" onclick="navTo('kitchen', this)">
+          <span class="sb-icon">👨‍🍳</span><span class="sb-label">ຫ້ອງຄົວ (KDS)</span>
+          <span class="sb-badge" id="sbBadgeKitchen">0</span>
+        </button>
+        <div class="sb-section-label" data-i18n="menu.system">ระบบ</div>
+        <button class="sb-item" data-page="reports" onclick="navTo('reports', this)">
+          <span class="sb-icon">📈</span><span class="sb-label" data-i18n="admin.reports">รายงาน</span>
+        </button>
+        <button class="sb-item" data-page="users" onclick="navTo('users', this)">
+          <span class="sb-icon">👥</span><span class="sb-label" data-i18n="admin.users">ผู้ใช้งาน</span>
+        </button>
+        <button class="sb-item" data-page="settings" onclick="navTo('settings', this)">
+          <span class="sb-icon">⚙️</span><span class="sb-label" data-i18n="admin.settings">ตั้งค่า</span>
+        </button>
+      </nav>
+
+      <div class="sb-footer">
+        <div class="sb-user">
+          <div class="sb-avatar" id="sbAvatar">A</div>
+          <div class="sb-user-info">
+            <div class="sb-user-name" id="sbUserName">Admin</div>
+            <div class="sb-user-role" data-i18n="users.role.admin">Super Admin</div>
+          </div>
+        </div>
+        <button class="sb-logout" onclick="doLogout()" data-i18n-title="tooltip.logout">⏻</button>
+      </div>
+    </aside>
+
+    <!-- ── MAIN AREA ── -->
+    <div class="main-area">
+
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="tb-left">
+          <button class="tb-menu-btn" id="tbMenuBtn" onclick="toggleMobileMenu()">☰</button>
+          <div class="tb-breadcrumb">
+            <span class="tb-bc-icon" id="tbIcon">📊</span>
+            <span class="tb-bc-title" id="tbTitle" data-i18n="admin.dashboard">Dashboard</span>
+          </div>
+        </div>
+        <div class="tb-right">
+          <button class="tb-icon-btn" onclick="refreshPage()" data-i18n-title="tooltip.refresh">🔄</button>
+          <button class="theme-toggle" type="button" onclick="toggleThemeMode()" aria-label="Toggle light and dark mode">
+            <span class="theme-toggle-text">Dark</span>
+          </button>
+          <div class="font-controls" aria-label="ปรับขนาดตัวอักษร">
+            <button class="font-btn" type="button" onclick="changeUiFontSize(-1)" title="ลดขนาดตัวอักษร">A-</button>
+            <button class="font-btn font-size-label" type="button" onclick="resetUiFontSize()" title="รีเซ็ตขนาดตัวอักษร">110%</button>
+            <button class="font-btn" type="button" onclick="changeUiFontSize(1)" title="เพิ่มขนาดตัวอักษร">A+</button>
+          </div>
+          <div id="langMount"></div>
+          <div class="tb-datetime" id="tbDatetime"></div>
+          <button class="tb-avatar-btn" onclick="navTo('settings', null)">
+            <div class="tb-avatar" id="tbAvatar">A</div>
+          </button>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-content" id="pageContent">
+
+        <!-- ══ DASHBOARD ══ -->
+        <section class="page active" id="page-dashboard">
+          <div class="page-title" data-i18n="admin.dashboard">ภาพรวมระบบ</div>
+
+          <!-- KPI Row -->
+          <div class="kpi-grid" id="kpiGrid"></div>
+
+          <!-- Charts Row -->
+          <div class="charts-row">
+            <div class="chart-card wide">
+              <div class="chart-header">
+                <div class="chart-title" data-i18n="dash.sales">ยอดขาย 7 วันล่าสุด</div>
+                <div class="chart-actions">
+                  <button class="chart-btn active" onclick="switchChart('week',this)" data-i18n="dash.week">สัปดาห์</button>
+                  <button class="chart-btn" onclick="switchChart('month',this)" data-i18n="dash.month">เดือน</button>
+                </div>
+              </div>
+              <canvas id="salesChart" height="200"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title" data-i18n="dash.top">สินค้าขายดี</div></div>
+              <canvas id="topChart" height="200"></canvas>
+            </div>
+          </div>
+
+          <!-- Recent Orders -->
+          <div class="section-card">
+            <div class="sc-header">
+              <div class="sc-title" data-i18n="dash.recent">คำสั่งซื้อล่าสุด</div>
+              <button class="sc-link" onclick="navTo('orders', null)" data-i18n="dash.viewall">ดูทั้งหมด →</button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="dashOrdersTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ ORDERS ══ -->
+        <section class="page" id="page-orders">
+          <div class="page-top-row">
+            <div class="page-title" data-i18n="admin.orders">คำสั่งซื้อ</div>
+            <div class="page-actions">
+              <select class="filter-select" id="orderStatusFilter" onchange="renderOrdersPage()">
+                <option value="all" data-i18n="filter.all">ทุกสถานะ</option>
+                <option value="pending" data-i18n="status.pending">รอดำเนินการ</option>
+                <option value="done" data-i18n="status.done">สำเร็จ</option>
+                <option value="cancel" data-i18n="status.cancel">ยกเลิก</option>
+              </select>
+            </div>
+          </div>
+          <div class="section-card">
+            <div class="table-wrap">
+              <table class="data-table" id="ordersTable"></table>
+            </div>
+            <div class="table-empty" id="ordersEmpty" style="display:none" data-i18n="orders.empty">ไม่มีคำสั่งซื้อ</div>
+          </div>
+        </section>
+
+        <!-- ══ PRODUCTS ══ -->
+        <section class="page" id="page-products">
+          <div class="page-top-row">
+            <div class="page-title" data-i18n="admin.products">สินค้า / เมนู</div>
+            <button class="primary-btn" onclick="openProductModal()" data-i18n="prod.add">+ เพิ่มสินค้า</button>
+          </div>
+
+          <!-- Search + filter -->
+          <div class="filter-bar">
+            <div class="filter-search">
+              <span>🔍</span>
+              <input type="text" id="productSearch" placeholder="ค้นหาสินค้า..." oninput="renderProductsPage()" data-i18n-ph="search.product">
+            </div>
+            <select class="filter-select" id="productCatFilter" onchange="renderProductsPage()">
+              <option value="all" data-i18n="cat.all">ทุกหมวด</option>
+              <option value="rice" data-i18n="cat.rice">🍚 ข้าว</option>
+              <option value="noodle" data-i18n="cat.noodle">🍜 เฝอ/ก๋วย</option>
+              <option value="grill" data-i18n="cat.grill">🔥 ปิ้ง</option>
+              <option value="drink" data-i18n="cat.drink">🥤 เครื่องดื่ม</option>
+              <option value="dessert" data-i18n="cat.dessert">🍮 ของหวาน</option>
+            </select>
+          </div>
+
+          <div class="section-card">
+            <div class="table-wrap">
+              <table class="data-table" id="productsTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ INVENTORY ══ -->
+        <section class="page" id="page-inventory">
+          <div class="page-top-row">
+            <div class="page-title" data-i18n="admin.inventory">สต็อกสินค้า</div>
+            <button class="primary-btn" onclick="openStockModal()" data-i18n="inv.adjust">+ ปรับสต็อก</button>
+          </div>
+
+          <!-- Stock alert -->
+          <div class="alert-banner" id="stockAlert"></div>
+
+          <div class="section-card">
+            <div class="table-wrap">
+              <table class="data-table" id="inventoryTable"></table>
+            </div>
+          </div>
+
+          <!-- Stock log -->
+          <div class="section-card" style="margin-top:16px">
+            <div class="sc-header"><div class="sc-title" data-i18n="inv.history">ประวัติการปรับสต็อก</div></div>
+            <div class="table-wrap">
+              <table class="data-table" id="stockLogTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ MATERIALS (ວັດຖຸດິບ) ══ -->
+        <section class="page" id="page-materials">
+          <div class="page-top-row">
+            <div class="page-title">🥩 ຈັດການວັດຖຸດິບ (Materials)</div>
+            <button class="primary-btn" onclick="openMaterialModal()">+ ເພີ່ມວັດຖຸດິບ</button>
+          </div>
+          <div class="section-card">
+            <div class="table-wrap">
+              <table class="data-table" id="materialsTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ CATEGORIES (ປະເພດ) ══ -->
+        <section class="page" id="page-categories">
+          <div class="page-top-row">
+            <div class="page-title">🏷️ ຈັດການປະເພດ (Categories)</div>
+            <button class="primary-btn" onclick="openCategoryModal()">+ ເພີ່ມປະເພດ</button>
+          </div>
+          <div class="section-card">
+            <div class="table-wrap">
+              <table class="data-table" id="categoriesTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ PURCHASE (ສັ່ງຊື້) ══ -->
+        <section class="page" id="page-purchase">
+          <div class="page-top-row">
+            <div class="page-title">🧾 ການສັ່ງຊື້ (Purchase Order)</div>
+            <button class="primary-btn" onclick="openPurchaseModal()">+ ສ້າງໃບສັ່ງຊື້</button>
+          </div>
+          <div class="section-card">
+            <div class="table-wrap">
+              <table class="data-table" id="purchaseTable"></table>
+            </div>
+            <div class="table-empty" id="purchaseEmpty" style="display:none">ຍັງບໍ່ມີໃບສັ່ງຊື້</div>
+          </div>
+        </section>
+
+        <!-- ══ IMPORT (ນຳເຂົ້າ) ══ -->
+        <section class="page" id="page-import">
+          <div class="page-top-row">
+            <div class="page-title">📥 ການນຳເຂົ້າ (Import / Receive)</div>
+          </div>
+          <div class="section-card">
+            <div class="sc-header"><div class="sc-title">ໃບສັ່ງຊື້ທີ່ລໍຖ້ານຳເຂົ້າ</div></div>
+            <div class="table-wrap">
+              <table class="data-table" id="importPendingTable"></table>
+            </div>
+            <div class="table-empty" id="importPendingEmpty" style="display:none">ບໍ່ມີໃບສັ່ງຊື້ຄ້າງນຳເຂົ້າ</div>
+          </div>
+          <div class="section-card" style="margin-top:16px">
+            <div class="sc-header"><div class="sc-title">ປະຫວັດການນຳເຂົ້າ</div></div>
+            <div class="table-wrap">
+              <table class="data-table" id="importHistoryTable"></table>
+            </div>
+            <div class="table-empty" id="importHistoryEmpty" style="display:none">ຍັງບໍ່ມີການນຳເຂົ້າ</div>
+          </div>
+        </section>
+
+        <!-- ══ TABLES (ຈັດການໂຕະ) ══ -->
+        <section class="page" id="page-tables">
+          <div class="page-top-row">
+            <div class="page-title">🪑 ຈັດການໂຕະ (Table Management)</div>
+            <button class="primary-btn" onclick="openTableModal()">+ ເພີ່ມໂຕະ</button>
+          </div>
+          <div class="section-card">
+            <div class="table-wrap">
+              <table class="data-table" id="tablesTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ KITCHEN (KDS) ══ -->
+        <section class="page" id="page-kitchen">
+          <div class="page-top-row">
+            <div class="page-title">👨‍🍳 ຈໍສະແດງຜົນຫ້ອງຄົວ (Kitchen Display System)</div>
+            <button class="primary-btn" onclick="renderKitchenPage()">🔄 ໂຫຼດຄືນ</button>
+          </div>
+          <div class="kpi-grid" id="kdsGrid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))"></div>
+          <div class="table-empty" id="kdsEmpty" style="display:none;text-align:center;padding:40px">✅ ບໍ່ມີອໍເດີ້ຄ້າງໃນຄິວ</div>
+        </section>
+
+        <!-- ══ REPORTS ══ -->
+        <section class="page" id="page-reports">
+          <div class="page-top-row">
+            <div class="page-title" data-i18n="rep.title">รายงานยอดขาย</div>
+            <div class="page-actions">
+              <select class="filter-select" id="reportType" onchange="renderReportsPage()">
+                <option value="sales">📈 ລາຍງານການຂາຍ</option>
+                <option value="drink">🥤 ລາຍງານເຄື່ອງດື່ມ</option>
+                <option value="material">🥩 ລາຍງານວັດຖຸດິບ</option>
+                <option value="purchase">🧾 ລາຍງານການສັ່ງຊື້</option>
+                <option value="import">📥 ລາຍງານການນຳເຂົ້າ</option>
+              </select>
+              <select class="filter-select" id="reportPeriod" onchange="renderReportsPage()">
+                <option value="7" data-i18n="rep.7days">7 วัน</option>
+                <option value="30" data-i18n="rep.30days">30 วัน</option>
+                <option value="90" data-i18n="rep.90days">90 วัน</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="kpi-grid" id="reportKpi"></div>
+
+          <div class="charts-row">
+            <div class="chart-card wide">
+              <div class="chart-header"><div class="chart-title" data-i18n="rep.daily">ยอดขายรายวัน</div></div>
+              <canvas id="reportChart" height="220"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title" data-i18n="rep.category">สัดส่วนหมวดหมู่</div></div>
+              <canvas id="catChart" height="220"></canvas>
+            </div>
+          </div>
+
+          <div class="section-card">
+            <div class="sc-header">
+              <div class="sc-title" data-i18n="rep.all">รายการขายทั้งหมด</div>
+              <button class="sc-link" onclick="exportCSV()" data-i18n="rep.export">⬇ Export CSV</button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="reportTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ USERS ══ -->
+        <section class="page" id="page-users">
+          <div class="page-top-row">
+            <div class="page-title" data-i18n="admin.users">ผู้ใช้งาน</div>
+            <button class="primary-btn" onclick="openUserModal()" data-i18n="user.add">+ เพิ่มผู้ใช้</button>
+          </div>
+          <div class="section-card">
+            <div class="table-wrap">
+              <table class="data-table" id="usersTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ SETTINGS ══ -->
+        <section class="page" id="page-settings">
+          <div class="page-title" data-i18n="admin.settings">ตั้งค่าระบบ</div>
+          <div class="settings-layout">
+
+            <div class="settings-group">
+              <div class="sg-title" data-i18n="set.store">🏪 ข้อมูลร้าน</div>
+              <div class="sg-row"><label data-i18n="settings.storename">ชื่อร้าน</label><input class="sg-input" id="sStoreName" value="The Ground Camp"></div>
+              <div class="sg-row"><label data-i18n="settings.phone">โทรศัพท์</label><input class="sg-input" id="sStorePhone" value="020 xxxx xxxx"></div>
+              <div class="sg-row"><label data-i18n="settings.address">ที่อยู่</label><input class="sg-input" id="sStoreAddr" value="เวียงจันทน์, ลาว"></div>
+              <div class="sg-row"><label data-i18n="settings.hours">เวลาเปิด-ปิด</label><input class="sg-input" value="08:00 – 22:00"></div>
+              <button class="sg-btn" onclick="showToast('✅ บันทึกข้อมูลร้านแล้ว')" data-i18n="btn.save">💾 บันทึก</button>
+            </div>
+
+            <div class="settings-group">
+              <div class="sg-title" data-i18n="set.tax">💰 ภาษี & ส่วนลด</div>
+              <div class="sg-row"><label data-i18n="settings.vat">VAT (%)</label><input class="sg-input" id="sVat" type="number" value="7"></div>
+              <div class="sg-row"><label data-i18n="settings.discount">ส่วนลดสูงสุด (%)</label><input class="sg-input" type="number" value="20"></div>
+              <div class="sg-row"><label data-i18n="settings.currency">สกุลเงิน</label>
+                <select class="sg-input">
+                  <option>LAK – ກີບ</option>
+                  <option>THB – บาท</option>
+                  <option>USD – Dollar</option>
+                </select>
+              </div>
+              <button class="sg-btn" onclick="showToast('✅ บันทึกการตั้งค่าภาษีแล้ว')" data-i18n="btn.save">💾 บันทึก</button>
+            </div>
+
+            <div class="settings-group">
+              <div class="sg-title" data-i18n="set.receipt">🖨️ ใบเสร็จ</div>
+              <div class="sg-row"><label data-i18n="settings.receiptheader">หัวใบเสร็จ</label><input class="sg-input" value="The Ground Camp"></div>
+              <div class="sg-row"><label data-i18n="settings.receiptfooter">ข้อความท้าย</label><input class="sg-input" value="ขอบคุณที่ใช้บริการ 🙏"></div>
+              <div class="sg-row"><label data-i18n="settings.showvat">แสดง VAT</label>
+                <select class="sg-input">
+                  <option data-i18n="settings.show">แสดง</option>
+                  <option data-i18n="settings.hide">ซ่อน</option>
+                </select>
+              </div>
+              <button class="sg-btn" onclick="showToast('✅ บันทึกการตั้งค่าใบเสร็จแล้ว')" data-i18n="btn.save">💾 บันทึก</button>
+            </div>
+
+            <div class="settings-group">
+              <div class="sg-title" data-i18n="set.password">🔐 เปลี่ยนรหัสผ่าน</div>
+              <div class="sg-row"><label data-i18n="settings.currentpw">รหัสปัจจุบัน</label><input class="sg-input" type="password" placeholder="••••••••"></div>
+              <div class="sg-row"><label data-i18n="settings.newpw">รหัสใหม่</label><input class="sg-input" type="password" placeholder="••••••••"></div>
+              <div class="sg-row"><label data-i18n="settings.confirmpw">ยืนยันรหัสใหม่</label><input class="sg-input" type="password" placeholder="••••••••"></div>
+              <button class="sg-btn" onclick="showToast('✅ เปลี่ยนรหัสผ่านแล้ว')" data-i18n="set.change">🔐 เปลี่ยนรหัสผ่าน</button>
+            </div>
+
+            <div class="settings-group danger-group">
+              <div class="sg-title" data-i18n="set.danger">⚠️ Zone อันตราย</div>
+              <div class="sg-row" style="flex-direction:column;gap:10px">
+                <button class="sg-btn blue" onclick="showToast('💾 สำรองข้อมูลสำเร็จ')" data-i18n="set.backup">💾 สำรองข้อมูล (Backup)</button>
+                <button class="sg-btn red" onclick="confirmReset()" data-i18n="set.reset">🗑️ รีเซ็ตข้อมูลทั้งหมด</button>
+              </div>
+              <div class="version-info" data-i18n="version.info">POS-SST Admin v1.0.0 · Build 2025</div>
+            </div>
+
+          </div>
+        </section>
+
+      </main>
+    </div><!-- /main-area -->
+
+  </div><!-- /app-shell -->
+
+  <!-- ════════ MOBILE BOTTOM NAV ════════ -->
+  <nav class="mobile-nav" id="mobileNav" style="display:none">
+    <button class="mn-item active" data-page="dashboard" onclick="navTo('dashboard',this)">
+      <span>📊</span><span data-i18n="admin.dashboard">หน้าหลัก</span>
+    </button>
+    <button class="mn-item" data-page="orders" onclick="navTo('orders',this)">
+      <span>📦</span><span data-i18n="admin.orders">ออร์เดอร์</span>
+    </button>
+    <button class="mn-item" data-page="products" onclick="navTo('products',this)">
+      <span>🍽️</span><span data-i18n="admin.products">สินค้า</span>
+    </button>
+    <button class="mn-item" data-page="reports" onclick="navTo('reports',this)">
+      <span>📈</span><span data-i18n="admin.reports">รายงาน</span>
+    </button>
+    <button class="mn-item" data-page="settings" onclick="navTo('settings',this)">
+      <span>⚙️</span><span data-i18n="admin.settings">ตั้งค่า</span>
+    </button>
+  </nav>
+
+  <!-- ════════ MOBILE SIDEBAR OVERLAY ════════ -->
+  <div class="mob-overlay" id="mobOverlay" onclick="closeMobileMenu()"></div>
+
+  <!-- ════════ MODALS ════════ -->
+
+  <!-- Product Modal -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="productModalTitle" data-i18n="modal.addproduct">เพิ่มสินค้า</div>
+        <button class="modal-close" onclick="closeModal('productModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="pmId">
+        <input type="hidden" id="pmImg">
+        <div class="mf-row">
+          <label>รูปสินค้า</label>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div id="pmImgPreview" style="width:84px;height:84px;border-radius:14px;overflow:hidden;flex-shrink:0;background:var(--surface2,#1a1a20);display:flex;align-items:center;justify-content:center;border:1px solid var(--border,#333)"></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <input type="file" id="pmImgFile" accept="image/*" style="display:none" onchange="handleProductImage(this)">
+              <button type="button" class="modal-btn confirm" style="padding:8px 14px" onclick="document.getElementById('pmImgFile').click()">📷 อัปโหลดรูป</button>
+              <button type="button" class="modal-btn cancel" id="pmImgClear" style="padding:6px 14px;display:none" onclick="clearProductImage()">🗑️ ลบรูป</button>
+              <div style="font-size:0.72rem;color:var(--muted,#888)">ระบบจะย่อรูปให้อัตโนมัติ</div>
+            </div>
+          </div>
+        </div>
+        <div class="mf-row">
+          <label>ຊື່ສິນຄ້າ / ชื่อสินค้า (ແຍກຕາມພາສາ)</label>
+          <div class="mf-row2">
+            <input class="mf-input" id="pmName_lo" placeholder="🇱🇦 ລາວ: ຂ້າວຜັດ">
+            <input class="mf-input" id="pmName_th" placeholder="🇹🇭 ไทย: ข้าวผัด">
+          </div>
+          <div class="mf-row2" style="margin-top:8px">
+            <input class="mf-input" id="pmName_en" placeholder="🇬🇧 EN: Fried Rice">
+            <input class="mf-input" id="pmName_zh" placeholder="🇨🇳 中文: 炒饭">
+          </div>
+          <div style="font-size:0.72rem;color:var(--muted,#888);margin-top:6px">ພາສາໃດຫວ່າງໄວ້ ຈະໃຊ້ຊື່ຈາກພາສາທຳອິດທີ່ກรอກ</div>
+        </div>
+        <div class="mf-row"><label data-i18n="modal.price">ราคา (ກີບ)</label><input class="mf-input" id="pmPrice" type="number" inputmode="numeric" placeholder="35000"></div>
+        <div class="mf-row">
+          <label>ຄຳອະທິບາຍ / คำอธิบาย (ແຍກຕາມພາສາ)</label>
+          <div class="mf-row2">
+            <input class="mf-input" id="pmDesc_lo" placeholder="🇱🇦 ລາວ">
+            <input class="mf-input" id="pmDesc_th" placeholder="🇹🇭 ไทย">
+          </div>
+          <div class="mf-row2" style="margin-top:8px">
+            <input class="mf-input" id="pmDesc_en" placeholder="🇬🇧 EN">
+            <input class="mf-input" id="pmDesc_zh" placeholder="🇨🇳 中文">
+          </div>
+        </div>
+        <div class="mf-row2">
+          <div class="mf-row"><label data-i18n="modal.cat">หมวดหมู่</label>
+            <select class="mf-input" id="pmCat">
+              <option value="rice" data-i18n="cat.rice">🍚 ข้าว</option>
+              <option value="noodle" data-i18n="cat.noodle">🍜 เฝอ/ก๋วย</option>
+              <option value="grill" data-i18n="cat.grill">🔥 ปิ้ง</option>
+              <option value="drink" data-i18n="cat.drink">🥤 เครื่องดื่ม</option>
+              <option value="dessert" data-i18n="cat.dessert">🍮 ของหวาน</option>
+            </select>
+          </div>
+          <div class="mf-row"><label data-i18n="modal.stock">สต็อกเริ่มต้น</label><input class="mf-input" id="pmStock" type="number" inputmode="numeric" placeholder="99"></div>
+        </div>
+        <div class="mf-row"><label data-i18n="modal.status">สถานะ</label>
+          <select class="mf-input" id="pmStatus">
+            <option value="active" data-i18n="modal.active">✅ ขายอยู่</option>
+            <option value="soldout" data-i18n="modal.soldout">❌ หมด</option>
+            <option value="hidden" data-i18n="modal.hidden">🚫 ซ่อน</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeModal('productModal')" data-i18n="modal.cancel">ยกเลิก</button>
+        <button class="modal-btn confirm" onclick="saveProduct()" data-i18n="modal.save">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stock Adjust Modal -->
+  <div class="modal-overlay" id="stockModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" data-i18n="modal.adjuststock">ปรับสต็อกสินค้า</div>
+        <button class="modal-close" onclick="closeModal('stockModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="mf-row"><label data-i18n="modal.product">สินค้า</label>
+          <select class="mf-input" id="smProduct"></select>
+        </div>
+        <div class="mf-row2">
+          <div class="mf-row"><label data-i18n="modal.type">ประเภท</label>
+            <select class="mf-input" id="smType">
+              <option value="in" data-i18n="modal.in">เข้า (+)</option>
+              <option value="out" data-i18n="modal.out">ออก (−)</option>
+              <option value="set" data-i18n="modal.set">ตั้งค่าใหม่</option>
+            </select>
+          </div>
+          <div class="mf-row"><label data-i18n="modal.qty">จำนวน</label>
+            <input class="mf-input" id="smQty" type="number" inputmode="numeric" placeholder="10">
+          </div>
+        </div>
+        <div class="mf-row"><label data-i18n="modal.note">หมายเหตุ</label><input class="mf-input" id="smNote" placeholder="เช่น รับสินค้าใหม่"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeModal('stockModal')" data-i18n="modal.cancel">ยกเลิก</button>
+        <button class="modal-btn confirm" onclick="saveStock()" data-i18n="modal.confirm">✅ ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Modal -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="userModalTitle" data-i18n="modal.adduser">เพิ่มผู้ใช้</div>
+        <button class="modal-close" onclick="closeModal('userModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="umId">
+        <div class="mf-row"><label data-i18n="modal.fullname">ชื่อเต็ม</label><input class="mf-input" id="umName" placeholder="ชื่อ นามสกุล"></div>
+        <div class="mf-row"><label data-i18n="login.username">ຊື່ຜູ້ໃຊ້</label><input class="mf-input" id="umUser" placeholder="username"></div>
+        <div class="mf-row"><label data-i18n="modal.password">รหัสผ่าน</label><input class="mf-input" id="umPass" type="password" placeholder="••••••••"></div>
+        <div class="mf-row"><label data-i18n="modal.role">บทบาท</label>
+          <select class="mf-input" id="umRole">
+            <option value="admin" data-i18n="user.role.admin">⚡ Super Admin</option>
+            <option value="manager" data-i18n="user.role.mgr">👔 ผู้จัดการ</option>
+            <option value="cashier" data-i18n="user.role.cash">🏪 พนักงานขาย</option>
+          </select>
+        </div>
+        <div class="mf-row"><label data-i18n="modal.status">สถานะ</label>
+          <select class="mf-input" id="umStatus">
+            <option value="active" data-i18n="modal.useractive">✅ ใช้งาน</option>
+            <option value="inactive" data-i18n="modal.userinactive">🚫 ระงับ</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeModal('userModal')" data-i18n="modal.cancel">ยกเลิก</button>
+        <button class="modal-btn confirm" onclick="saveUser()" data-i18n="modal.save">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Material Modal -->
+  <div class="modal-overlay" id="materialModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="materialModalTitle">ເພີ່ມວັດຖຸດິບ</div>
+        <button class="modal-close" onclick="closeModal('materialModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="mtId">
+        <div class="mf-row"><label>ຊື່ວັດຖຸດິບ</label><input class="mf-input" id="mtName" placeholder="ເຊັ່ນ: ຊີ້ນໝູ"></div>
+        <div class="mf-row2">
+          <div class="mf-row"><label>ຫົວໜ່ວຍ</label><input class="mf-input" id="mtUnit" placeholder="kg / ຂວດ / ຖົງ"></div>
+          <div class="mf-row"><label>ຄົງເຫຼືອ</label><input class="mf-input" id="mtStock" type="number" inputmode="numeric" placeholder="20"></div>
+        </div>
+        <div class="mf-row"><label>ຈຳນວນຂັ້ນຕ່ຳ (ແຈ້ງເຕືອນ)</label><input class="mf-input" id="mtMin" type="number" inputmode="numeric" placeholder="5"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeModal('materialModal')">ຍົກເລີກ</button>
+        <button class="modal-btn confirm" onclick="saveMaterial()">💾 ບັນທຶກ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Modal -->
+  <div class="modal-overlay" id="categoryModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="categoryModalTitle">ເພີ່ມປະເພດ</div>
+        <button class="modal-close" onclick="closeModal('categoryModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="ctId">
+        <div class="mf-row"><label>ຊື່ປະເພດ</label><input class="mf-input" id="ctName" placeholder="ເຊັ່ນ: ເຂົ້າ, ເຝີ, ເຄື່ອງດື່ມ"></div>
+        <div class="mf-row"><label>ໝວດຫຼັກ</label>
+          <select class="mf-input" id="ctType">
+            <option value="food">🍽️ ອາຫານ</option>
+            <option value="drink">🥤 ເຄື່ອງດື່ມ</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeModal('categoryModal')">ຍົກເລີກ</button>
+        <button class="modal-btn confirm" onclick="saveCategory()">💾 ບັນທຶກ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Detail Modal -->
+  <div class="modal-overlay" id="orderDetailModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="odTitle" data-i18n="modal.orderdetail">รายละเอียดออร์เดอร์</div>
+        <button class="modal-close" onclick="closeModal('orderDetailModal')">✕</button>
+      </div>
+      <div class="modal-body" id="odBody"></div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeModal('orderDetailModal')" data-i18n="modal.close">ปิด</button>
+        <button class="modal-btn confirm" onclick="printReceipt()" data-i18n="modal.print">🖨️ พิมพ์ใบเสร็จ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Purchase Modal -->
+  <div class="modal-overlay" id="purchaseModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">🧾 ສ້າງໃບສັ່ງຊື້</div>
+        <button class="modal-close" onclick="closeModal('purchaseModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="mf-row2">
+          <div class="mf-row"><label>ປະເພດ</label>
+            <select class="mf-input" id="poKind" onchange="fillPoItemOptions()">
+              <option value="drink">🥤 ເຄື່ອງດື່ມ</option>
+              <option value="material">🥩 ວັດຖຸດິບ</option>
+            </select>
+          </div>
+          <div class="mf-row"><label>ລາຍການ</label>
+            <select class="mf-input" id="poItem"></select>
+          </div>
+        </div>
+        <div class="mf-row2">
+          <div class="mf-row"><label>ຈຳນວນ</label><input class="mf-input" id="poQty" type="number" inputmode="numeric" placeholder="10"></div>
+          <div class="mf-row"><label>ລາຄາຕໍ່ໜ່ວຍ (ກີບ)</label><input class="mf-input" id="poPrice" type="number" inputmode="numeric" placeholder="15000"></div>
+        </div>
+        <button class="modal-btn confirm" style="width:100%" onclick="addPoLine()">➕ ເພີ່ມລາຍການ</button>
+        <div style="margin-top:12px;padding:12px;background:var(--surface2);border-radius:10px;font-size:0.85rem" id="poLines">ຍັງບໍ່ມີລາຍການ</div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeModal('purchaseModal')">ຍົກເລີກ</button>
+        <button class="modal-btn confirm" onclick="savePurchase()">💾 ບັນທຶກໃບສັ່ງຊື້</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Modal -->
+  <div class="modal-overlay" id="tableModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="tableModalTitle">ເພີ່ມໂຕະ</div>
+        <button class="modal-close" onclick="closeModal('tableModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="tmId">
+        <div class="mf-row"><label>ເລກທີໂຕະ</label><input class="mf-input" id="tmName" placeholder="ເຊັ່ນ: T07"></div>
+        <div class="mf-row"><label>ສະຖານະ</label>
+          <select class="mf-input" id="tmStatus">
+            <option value="free">🟢 ວ່າງ</option>
+            <option value="busy">🔴 ບໍ່ວ່າງ</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeModal('tableModal')">ຍົກເລີກ</button>
+        <button class="modal-btn confirm" onclick="saveTable()">💾 ບັນທຶກ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ TOAST ════════ -->
+  <div class="toast-stack" id="toastStack"></div>
+
+  <script src="I18n.js?v=16"></script>
+  <script src="Db.js?v=16"></script>
+  <script src="admin-script.js?v=16"></script>
+</body>
+</html>
