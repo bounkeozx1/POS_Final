@@ -1279,16 +1279,29 @@ function openPurchaseModal() {
   openModal('purchaseModal');
 }
 
-function fillPoItemOptions() {
-  const kind = document.getElementById('poKind').value;
-  const sel  = document.getElementById('poItem');
+/* ລາຍການທີ່ເລືອກໄດ້ຕາມປະເພດ — ໃຊ້ຮ່ວມກັນທັງໃບສັ່ງຊື້ ແລະ ນຳເຂົ້າໂດຍກົງ
+   ແຍກອາຫານ/ເຄື່ອງດື່ມດ້ວຍ type ຂອງປະເພດ (tbl_category.type) ບໍ່ແມ່ນ
+   ທຽບ cat === 'drink' ຕົງ ໆ — ຮ້ານເພີ່ມປະເພດເຄື່ອງດື່ມໃໝ່ (ເຊັ່ນ 'beer')
+   ໄດ້ ແລ້ວມັນຈະຖືກຈັດເຂົ້າກຸ່ມຖືກຕ້ອງເອງ ບໍ່ຕ້ອງມາແກ້ໂຄ້ດ */
+function stockItemOptions(kind) {
   if (kind === 'material') {
-    sel.innerHTML = POS_DB.materials.getAll().map(m =>
-      `<option value="${m.id}">${localName(m)} (ຄົງເຫຼືອ: ${m.stock} ${m.unit})</option>`).join('');
-  } else {
-    sel.innerHTML = POS_DB.products.getAll().filter(p => p.cat === 'drink').map(p =>
-      `<option value="${p.id}">${p.emoji} ${localName(p)} (ຄົງເຫຼືອ: ${p.stock})</option>`).join('');
+    const ms = POS_DB.materials.getAll();
+    return ms.length
+      ? ms.map(m => `<option value="${m.id}">${localName(m)} (ຄົງເຫຼືອ: ${m.stock} ${m.unit})</option>`).join('')
+      : '<option value="">— ຍັງບໍ່ມີວັດຖຸດິບ —</option>';
   }
+  const drinkCats = new Set(POS_DB.categories.getAll()
+    .filter(c => c.type === 'drink').map(c => c.cat));
+  const ps = POS_DB.products.getAll()
+    .filter(p => kind === 'drink' ? drinkCats.has(p.cat) : !drinkCats.has(p.cat));
+  return ps.length
+    ? ps.map(p => `<option value="${p.id}">${p.emoji || ''} ${localName(p)} (ຄົງເຫຼືອ: ${p.stock})</option>`).join('')
+    : '<option value="">— ຍັງບໍ່ມີລາຍການ —</option>';
+}
+
+function fillPoItemOptions() {
+  document.getElementById('poItem').innerHTML =
+    stockItemOptions(document.getElementById('poKind').value);
 }
 
 function addPoLine() {
@@ -1356,7 +1369,9 @@ function renderImportPage() {
   const hBody = `<tbody>${imps.map(im => `<tr>
     <td><b class="mono">#${im.id}</b></td>
     <td style="font-size:0.8rem;color:var(--muted)">${POS_DB.fmtDateTime(im.imp_date || im.date)}</td>
-    <td><span class="badge badge-blue">#${im.purId}</span></td>
+    <td>${im.purId
+          ? `<span class="badge badge-blue">#${im.purId}</span>`
+          : `<span class="badge badge-yellow">ໂດຍກົງ</span>`}</td>
     <td style="font-size:0.82rem">${im.items.map(i => `${i.name} x${i.qty}`).join(', ')}</td>
     <td>${im.userName || '-'}</td>
   </tr>`).join('')}</tbody>`;
@@ -1371,6 +1386,73 @@ function receivePurchase(purId) {
     userName: DB.currentUser?.name,
   });
   if (imp) { renderImportPage(); showToast('✅ ນຳເຂົ້າສຳເລັດ — ສະຕັອກຖືກອັບເດດແລ້ວ'); }
+}
+
+/* ── ນຳເຂົ້າໂດຍກົງ (ບໍ່ຕ້ອງມີໃບສັ່ງຊື້) ─────────────────────
+   ໜ້ານີ້ແຕ່ກ່ອນມີແຕ່ຕາຕະລາງ ບໍ່ມີປຸ່ມໃດເລີຍ ຕອນທີ່ຍັງບໍ່ມີໃບສັ່ງຊື້
+   ຄ້າງ — ຄົນໃຊ້ຈຶ່ງບໍ່ຮູ້ວ່າຈະບັນທຶກການນຳເຂົ້າແນວໃດ */
+let _impLines = [];
+
+function openImportModal() {
+  _impLines = [];
+  renderImpLines();
+  fillImpItemOptions();
+  document.getElementById('impQty').value   = '';
+  document.getElementById('impPrice').value = '';
+  openModal('importModal');
+}
+
+function fillImpItemOptions() {
+  document.getElementById('impItem').innerHTML =
+    stockItemOptions(document.getElementById('impKind').value);
+}
+
+function addImpLine() {
+  const kind  = document.getElementById('impKind').value;
+  const refId = parseInt(document.getElementById('impItem').value);
+  const qty   = parseInt(document.getElementById('impQty').value);
+  // ຕົ້ນທຶນບໍ່ບັງຄັບ — ຂອງທີ່ໄດ້ມາຟຣີ/ແຖມ ກໍ່ຕ້ອງນຳເຂົ້າໄດ້ ຈຶ່ງປ່ອຍວ່າງເປັນ 0
+  const price = parseInt(document.getElementById('impPrice').value) || 0;
+  if (isNaN(refId)) { showToast('⚠️ ກະລຸນາເລືອກລາຍການ'); return; }
+  if (isNaN(qty) || qty <= 0) { showToast('⚠️ ຈຳນວນຕ້ອງຫຼາຍກວ່າ 0'); return; }
+  if (price < 0) { showToast('⚠️ ຕົ້ນທຶນຕິດລົບບໍ່ໄດ້'); return; }
+  const item = kind === 'material' ? POS_DB.materials.get(refId) : POS_DB.products.get(refId);
+  if (!item) return;
+  _impLines.push({ kind, refId, name: localName(item), qty, price });
+  document.getElementById('impQty').value   = '';
+  document.getElementById('impPrice').value = '';
+  renderImpLines();
+}
+
+function removeImpLine(idx) { _impLines.splice(idx, 1); renderImpLines(); }
+
+function renderImpLines() {
+  const el = document.getElementById('impLines');
+  if (!_impLines.length) { el.innerHTML = 'ຍັງບໍ່ມີລາຍການ'; return; }
+  const total = _impLines.reduce((s, l) => s + l.qty * l.price, 0);
+  const icon  = k => k === 'material' ? '🥩' : k === 'drink' ? '🥤' : '🍽️';
+  el.innerHTML = _impLines.map((l, i) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+      <span>${icon(l.kind)} ${l.name} x${l.qty}${l.price ? ` @ ${fmt(l.price)}` : ''}</span>
+      <span><b>${fmt(l.qty * l.price)}</b> <button class="tbl-btn danger" onclick="removeImpLine(${i})">✕</button></span>
+    </div>`).join('')
+    + `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-weight:700">
+        <span>ລວມຕົ້ນທຶນ</span><span style="color:var(--accent2)">${fmt(total)} ${i18n.t('currency')}</span>
+      </div>`;
+}
+
+function saveDirectImport() {
+  if (!_impLines.length) { showToast('⚠️ ກະລຸນາເພີ່ມລາຍການກ່ອນ'); return; }
+  const imp = POS_DB.imports.createDirect({
+    items:    _impLines,
+    userId:   DB.currentUser?.id,
+    userName: DB.currentUser?.name,
+  });
+  if (!imp) { showToast('⚠️ ບັນທຶກບໍ່ສຳເລັດ'); return; }
+  _impLines = [];
+  closeModal('importModal');
+  renderImportPage();
+  showToast('✅ ນຳເຂົ້າ #' + imp.id + ' ສຳເລັດ — ສະຕັອກຖືກອັບເດດແລ້ວ');
 }
 
 // ════════════════════════════════

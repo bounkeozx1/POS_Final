@@ -418,6 +418,19 @@ const POS_DB = (() => {
     startRealtime();
   }
 
+  /* รหัสใหม่ของทุกตาราง — เดิมใช้ Date.now() ตรง ๆ
+     ปัญหา: ถ้าสร้างหลายแถวรวดเดียว (เช่นนำเข้า 3 รายการ → stock log 3 แถว)
+     ทุกแถวเกิดในมิลลิวินาทีเดียวกัน จึงได้ id ซ้ำกันหมด แล้วฝั่ง PHP ที่ใช้
+     INSERT ... ON DUPLICATE KEY UPDATE จะเขียนทับกันเอง เหลือรอดแถวเดียว
+     (เจอจริงตอนทดสอบ: นำเข้า 3 รายการ แต่ tbl_stock_log ได้มาแถวเดียว)
+     ตัวนับนี้การันตีว่าค่าเพิ่มขึ้นเสมอ ยังเรียงตามเวลาได้เหมือนเดิม */
+  let _lastId = 0;
+  function newId() {
+    const now = Date.now();
+    _lastId = now > _lastId ? now : _lastId + 1;
+    return _lastId;
+  }
+
   // ── Products ──────────────────────────────────────────────
   const products = {
     getAll()   { return load(KEY.products) || []; },
@@ -427,7 +440,7 @@ const POS_DB = (() => {
 
     add(item) {
       const arr = this.getAll();
-      item.id   = Date.now();
+      item.id   = newId();
       arr.push(item);
       this.save(arr);
       return item;
@@ -533,7 +546,7 @@ const POS_DB = (() => {
     add({ productId, productName, type, qty, note, kind = 'product' }) {
       const arr = this.getAll();
       arr.unshift({
-        id:          Date.now(),
+        id:          newId(),
         kind, productId, productName, type, qty,
         note:        note || '',
         date:        new Date().toISOString(),   // ISO — เก็บลง DATETIME ได้ / เรียงลำดับได้
@@ -554,7 +567,7 @@ const POS_DB = (() => {
 
     add(user) {
       const arr  = this.getAll();
-      user.id    = Date.now();
+      user.id    = newId();
       user.lastLogin = '-';
       if (user.password) user.password = hashPassword(user.password);
       arr.push(user);
@@ -588,7 +601,7 @@ const POS_DB = (() => {
     save(arr) { save(KEY.categories, arr); },
     // cat  = cat_key ในฐานข้อมูล (NOT NULL + UNIQUE) — หน้าจอ admin ไม่ได้กรอกค่านี้
     // จึงต้องสร้างให้เอง ไม่งั้น INSERT จะพังทุกครั้งที่เพิ่มประเภทใหม่
-    add(c)    { const arr = this.getAll(); c.id = Date.now(); if (!c.cat) c.cat = 'cat' + c.id; arr.push(c); this.save(arr); return c; },
+    add(c)    { const arr = this.getAll(); c.id = newId(); if (!c.cat) c.cat = 'cat' + c.id; arr.push(c); this.save(arr); return c; },
     update(id, patch) {
       const arr = this.getAll();
       const idx = arr.findIndex(c => c.id === id);
@@ -605,7 +618,7 @@ const POS_DB = (() => {
     getAll()  { return load(KEY.materials) || []; },
     get(id)   { return this.getAll().find(m => m.id === id) || null; },
     save(arr) { save(KEY.materials, arr); },
-    add(m)    { const arr = this.getAll(); m.id = Date.now(); arr.push(m); this.save(arr); return m; },
+    add(m)    { const arr = this.getAll(); m.id = newId(); arr.push(m); this.save(arr); return m; },
     update(id, patch) {
       const arr = this.getAll();
       const idx = arr.findIndex(m => m.id === id);
@@ -632,7 +645,7 @@ const POS_DB = (() => {
     create({ items, userId, userName }) {
       const now = new Date();
       const po = {
-        id:        Date.now(),
+        id:        newId(),
         pur_date:  now.toISOString(),
         date:      now.toLocaleString('lo-LA'),
         items,
@@ -661,26 +674,17 @@ const POS_DB = (() => {
     getAll()  { return load(KEY.imports) || []; },
     save(arr) { save(KEY.imports, arr); },
 
-    // นำเข้าตามใบสั่งซื้อ: บวกสต็อกสินค้า/วัตถุดิบ แล้วปิดใบสั่งซื้อ
-    createFromPurchase(purId, { userId, userName }) {
-      const po = purchases.get(purId);
-      if (!po || po.status !== 'pending') return null;
-      const now = new Date();
-      const imp = {
-        id:       Date.now(),
-        imp_date: now.toISOString(),
-        date:     now.toLocaleString('lo-LA'),
-        purId:    po.id,
-        items:    po.items,
-        total:    po.total,
-        userId, userName,
-      };
-      // บวกสต็อก
-      po.items.forEach(i => {
+    /* บวกสต็อก + เขียน stock log ให้ทุกบรรทัดที่นำเข้า
+       แยกออกมาเพราะมีผู้เรียก 2 ทาง (ตามใบสั่งซื้อ / นำเข้าโดยตรง)
+       ถ้าปล่อยให้ต่างคนต่างเขียน สองทางจะเพี้ยนจากกันได้ง่าย ๆ
+       เช่นทางหนึ่งลืมปลด soldout หรือลืมลง log แล้วสต็อกกับรายงานไม่ตรงกัน */
+    _stockIn(items, note) {
+      items.forEach(i => {
         if (i.kind === 'material') {
           materials.increaseStock(i.refId, i.qty);
         } else {
           const p = products.get(i.refId);
+          // ของที่เคยหมดแล้วมีของเข้า ต้องกลับมาขายได้เอง ไม่ต้องไปกดปลดเอง
           if (p) products.update(i.refId, {
             stock:  (p.stock || 0) + i.qty,
             status: p.status === 'soldout' ? 'active' : p.status,
@@ -688,12 +692,53 @@ const POS_DB = (() => {
         }
         stockLog.add({ kind: i.kind === 'material' ? 'material' : 'product',
                        productId: i.refId, productName: i.name, type: 'in', qty: i.qty,
-                       note: 'ນຳເຂົ້າຕາມໃບສັ່ງຊື້ #' + po.id });
+                       note });
       });
+    },
+
+    // นำเข้าตามใบสั่งซื้อ: บวกสต็อกสินค้า/วัตถุดิบ แล้วปิดใบสั่งซื้อ
+    createFromPurchase(purId, { userId, userName }) {
+      const po = purchases.get(purId);
+      if (!po || po.status !== 'pending') return null;
+      const now = new Date();
+      const imp = {
+        id:       newId(),
+        imp_date: now.toISOString(),
+        date:     now.toLocaleString('lo-LA'),
+        purId:    po.id,
+        items:    po.items,
+        total:    po.total,
+        userId, userName,
+      };
+      this._stockIn(po.items, 'ນຳເຂົ້າຕາມໃບສັ່ງຊື້ #' + po.id);
       const arr = this.getAll();
       arr.unshift(imp);
       this.save(arr);
       purchases.updateStatus(purId, 'imported');
+      return imp;
+    },
+
+    /* นำเข้าโดยตรง — ไม่ต้องมีใบสั่งซื้อก่อน
+       ของที่ซื้อสดหน้าร้าน (น้ำแข็ง ผัก เบียร์ลัง) ไม่ได้ผ่านใบสั่งซื้อจริง
+       ถ้าบังคับให้ออกใบสั่งซื้อก่อนทุกครั้ง คนหน้าร้านจะเลี่ยงไปแก้สต็อก
+       ในหน้าเมนูแทน ซึ่งไม่ทิ้ง log อะไรไว้เลย ทางนี้จึงเก็บประวัติได้ครบกว่า
+       purId = null → tbl_import.pur_id เก็บเป็น NULL (คอลัมน์ยอมรับ NULL อยู่แล้ว) */
+    createDirect({ items, userId, userName }) {
+      if (!Array.isArray(items) || !items.length) return null;
+      const now = new Date();
+      const imp = {
+        id:       newId(),
+        imp_date: now.toISOString(),
+        date:     now.toLocaleString('lo-LA'),
+        purId:    null,
+        items,
+        total:    items.reduce((s, i) => s + i.qty * (i.price || 0), 0),
+        userId, userName,
+      };
+      this._stockIn(items, 'ນຳເຂົ້າໂດຍກົງ #' + imp.id);
+      const arr = this.getAll();
+      arr.unshift(imp);
+      this.save(arr);
       return imp;
     },
   };
@@ -703,7 +748,7 @@ const POS_DB = (() => {
     getAll()  { return load(KEY.tables) || []; },
     get(id)   { return this.getAll().find(t => t.id === id) || null; },
     save(arr) { save(KEY.tables, arr); },
-    add(t)    { const arr = this.getAll(); t.id = Date.now(); t.status = t.status || 'free'; arr.push(t); this.save(arr); return t; },
+    add(t)    { const arr = this.getAll(); t.id = newId(); t.status = t.status || 'free'; arr.push(t); this.save(arr); return t; },
     update(id, patch) {
       const arr = this.getAll();
       const idx = arr.findIndex(t => t.id === id);

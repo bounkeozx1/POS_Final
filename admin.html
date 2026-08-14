@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -328,6 +328,7 @@
         <section class="page" id="page-import">
           <div class="page-top-row">
             <div class="page-title">📥 ການນຳເຂົ້າ (Import / Receive)</div>
+            <button class="primary-btn" onclick="openImportModal()">+ ນຳເຂົ້າໂດຍກົງ</button>
           </div>
           <div class="section-card">
             <div class="sc-header"><div class="sc-title">ໃບສັ່ງຊື້ທີ່ລໍຖ້ານຳເຂົ້າ</div></div>
@@ -726,6 +727,7 @@
         <div class="mf-row2">
           <div class="mf-row"><label>ປະເພດ</label>
             <select class="mf-input" id="poKind" onchange="fillPoItemOptions()">
+              <option value="food">🍽️ ອາຫານ</option>
               <option value="drink">🥤 ເຄື່ອງດື່ມ</option>
               <option value="material">🥩 ວັດຖຸດິບ</option>
             </select>
@@ -744,6 +746,40 @@
       <div class="modal-footer">
         <button class="modal-btn cancel" onclick="closeModal('purchaseModal')">ຍົກເລີກ</button>
         <button class="modal-btn confirm" onclick="savePurchase()">💾 ບັນທຶກໃບສັ່ງຊື້</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direct Import Modal — ນຳເຂົ້າໂດຍບໍ່ຕ້ອງມີໃບສັ່ງຊື້ -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">📥 ນຳເຂົ້າສິນຄ້າ / ວັດຖຸດິບ</div>
+        <button class="modal-close" onclick="closeModal('importModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="mf-row2">
+          <div class="mf-row"><label>ປະເພດ</label>
+            <select class="mf-input" id="impKind" onchange="fillImpItemOptions()">
+              <option value="food">🍽️ ອາຫານ</option>
+              <option value="drink">🥤 ເຄື່ອງດື່ມ</option>
+              <option value="material">🥩 ວັດຖຸດິບ</option>
+            </select>
+          </div>
+          <div class="mf-row"><label>ລາຍການ</label>
+            <select class="mf-input" id="impItem"></select>
+          </div>
+        </div>
+        <div class="mf-row2">
+          <div class="mf-row"><label>ຈຳນວນ</label><input class="mf-input" id="impQty" type="number" inputmode="numeric" placeholder="10"></div>
+          <div class="mf-row"><label>ຕົ້ນທຶນ/ໜ່ວຍ (ບໍ່ບັງຄັບ)</label><input class="mf-input" id="impPrice" type="number" inputmode="numeric" placeholder="0"></div>
+        </div>
+        <button class="modal-btn confirm" style="width:100%" onclick="addImpLine()">➕ ເພີ່ມລາຍການ</button>
+        <div style="margin-top:12px;padding:12px;background:var(--surface2);border-radius:10px;font-size:0.85rem" id="impLines">ຍັງບໍ່ມີລາຍການ</div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeModal('importModal')">ຍົກເລີກ</button>
+        <button class="modal-btn confirm" onclick="saveDirectImport()">💾 ບັນທຶກການນຳເຂົ້າ</button>
       </div>
     </div>
   </div>
@@ -775,8 +811,8 @@
   <!-- ════════ TOAST ════════ -->
   <div class="toast-stack" id="toastStack"></div>
 
-  <script src="I18n.js?v=16"></script>
-  <script src="Db.js?v=16"></script>
-  <script src="admin-script.js?v=16"></script>
+  <script src="I18n.js?v=17"></script>
+  <script src="Db.js?v=17"></script>
+  <script src="admin-script.js?v=17"></script>
 </body>
 </html>
