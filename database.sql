@@ -248,7 +248,9 @@ CREATE TABLE tbl_setting (
 
 
 -- ============================================================
--- ຂໍ້ມູນຕັ້ງຕົ້ນ (master data) — ຂອງຈິງຂອງຮ້ານ
+-- ຂໍ້ມູນຕັ້ງຕົ້ນ (master data) — export ຈາກ MySQL ທີ່ໃຊ້ຢູ່ຈິງ
+-- ສ້າງໂດຍ tools/export-db.php ເມື່ອ 2026-08-14 04:14
+-- ຢ່າແກ້ດ້ວຍມື — ແກ້ຜ່ານໜ້າ admin ແລ້ວລັນສະຄິບໃໝ່
 -- ລຳດັບສຳຄັນ: ຕາຕະລາງແມ່ກ່ອນ ຕາຕະລາງລູກ (ຕິດ FOREIGN KEY)
 -- ============================================================
 
@@ -256,91 +258,88 @@ CREATE TABLE tbl_setting (
 INSERT INTO tbl_setting
   (setting_id, store_name, phone, address, vat_pct, currency, receipt_header, receipt_footer, order_num)
 VALUES
-  (1, 'The Ground Camp', '020 xxxx xxxx',
-   'ບ້ານໂພນປາເປົ່າ, ເມືອງໄຊເສດຖາ, ນະຄອນຫຼວງວຽງຈັນ',
-   7, 'LAK', 'The Ground Camp', 'ຂອບໃຈທີ່ໃຊ້ບໍລິການ 🙏', 1001);
+  (1, 'The Ground Camp', '020 xxxx xxxx', 'ບ້ານໂພນປາເປົ່າ, ເມືອງໄຊເສດຖາ, ນະຄອນຫຼວງວຽງຈັນ', 7, 'LAK', 'The Ground Camp', 'ຂອບໃຈທີ່ໃຊ້ບໍລິການ 🙏', 1001);
 
 -- ໝວດສິນຄ້າ (tbl_category) ----------------------------------
 INSERT INTO tbl_category (cate_id, cate_name, type, cat_key, name_lo, name_th, name_en, name_zh) VALUES
-  (1, 'ອາຫານ',       'food',  'rice',    'ເຂົ້າ',       'ข้าว',        'Rice',    '米饭'),
-  (2, 'ອາຫານ',       'food',  'noodle',  'ເຝີ/ກ໋ວຍ',    'เฝอ/ก๋วย',    'Noodles', '面条'),
-  (3, 'ອາຫານ',       'food',  'grill',   'ປີ້ງ',        'ปิ้ง',        'Grilled', '烤制'),
-  (4, 'ເຄື່ອງດື່ມ',  'drink', 'drink',   'ເຄື່ອງດື່ມ',  'เครื่องดื่ม', 'Drinks',  '饮品'),
-  (5, 'ອາຫານ',       'food',  'dessert', 'ຂອງຫວານ',    'ของหวาน',     'Dessert', '甜点');
+  (1, 'ອາຫານ', 'food', 'rice', 'ເຂົ້າ', 'ข้าว', 'Rice', '米饭'),
+  (2, 'ອາຫານ', 'food', 'noodle', 'ເຝີ/ກ໋ວຍ', 'เฝอ/ก๋วย', 'Noodles', '面条'),
+  (3, 'ອາຫານ', 'food', 'grill', 'ປີ້ງ', 'ปิ้ง', 'Grilled', '烤制'),
+  (4, 'ເຄື່ອງດື່ມ', 'drink', 'drink', 'ເຄື່ອງດື່ມ', 'เครื่องดื่ม', 'Drinks', '饮品'),
+  (5, 'ອາຫານ', 'food', 'dessert', 'ຂອງຫວານ', 'ของหวาน', 'Dessert', '甜点');
 
 -- ໂຕະ (tbl_table) -------------------------------------------
 INSERT INTO tbl_table (table_id, table_name, status) VALUES
-  (1, 'T01', 'free'), (2, 'T02', 'free'), (3, 'T03', 'free'),
-  (4, 'T04', 'free'), (5, 'T05', 'free'), (6, 'T06', 'free');
+  (1, 'T01', 'free'), (2, 'T02', 'free'), (3, 'T03', 'free'), (4, 'T04', 'free'), (5, 'T05', 'free'), (6, 'T06', 'free');
 
 -- ຜູ້ໃຊ້ (tbl_user) -----------------------------------------
 -- password = SHA-256 + salt ສະເພາະຄົນ + ວົນຊ້ຳ 1,000 ຮອບ  →  s1$<salt>$<hash>
--- ທັງສອງບັນຊີໃຊ້ລະຫັດ "1234" ແຕ່ຄ່າ hash ຕ່າງກັນ ເພາະ salt ຄົນລະອັນ
 INSERT INTO tbl_user (user_id, username, password, full_name, role, status, last_login) VALUES
   (1, 'admin',
-      's1$93f82fcacedc22c3d725f7229d3c35fe$4ffb1ba4caabcf6d04fb80f18b17934a5d6d3cb25f7748ab2711f994c64ca1f5',
+      's1$6c7f7e51ac368b86d4d6bf8bd3c4facf$49125660a9bde2a06f4420569ce15aaef4521b94540873061eda2202e130f8c4',
       'Admin User', 'admin', 'active', NULL),
   (2, 'cashier',
-      's1$2874a93f914842d2e3ad32d8bd57641d$320b765df1a6ab98d66c3a7e740f232fc22d680cf1b82b234b4b0075ab411608',
-      'Cashier 1', 'cashier', 'active', NULL);
+      's1$0e4cc95917a30cb806e4711275772255$c21573a493bc41a5f039e890e567a36f9689fc562ea40ed18fe41a5c3efa5f58',
+      'Cashier 1', 'cashier', 'active', NULL),
+  (1786340474785, 'test01',
+      's1$f93c213c664b9c32c9972cb64e402abd$95c852884ae69a91c76383199b8d414796ef1290b1f908fc8857b11e2ea932c7',
+      'test', 'cashier', 'active', NULL);
 
 -- ວັດຖຸດິບ (tbl_material) -----------------------------------
 INSERT INTO tbl_material (mat_id, name_lo, name_th, name_en, name_zh, unit, qty_stock, min_stock) VALUES
-  (1, 'ຊີ້ນໝູ',      'เนื้อหมู',   'Pork',        '猪肉',   'kg',   20,  5),
-  (2, 'ຊີ້ນໄກ່',     'เนื้อไก่',   'Chicken',     '鸡肉',   'kg',   15,  5),
-  (3, 'ເຂົ້າສານ',    'ข้าวสาร',    'Rice grain',  '大米',   'kg',   50, 10),
-  (4, 'ຜັກລວມ',      'ผักรวม',     'Vegetables',  '蔬菜',   'kg',   10,  3),
-  (5, 'ນ້ຳມັນພືດ',   'น้ำมันพืช',  'Cooking oil', '食用油', 'ຂວດ',  12,  4);
+  (1, 'ຊີ້ນໝູ', 'เนื้อหมู', 'Pork', '猪肉', 'kg', 25, 5),
+  (2, 'ຊີ້ນໄກ່', 'เนื้อไก่', 'Chicken', '鸡肉', 'kg', 15, 5),
+  (3, 'ເຂົ້າສານ', 'ข้าวสาร', 'Rice grain', '大米', 'kg', 50, 10),
+  (4, 'ຜັກລວມ', 'ผักรวม', 'Vegetables', '蔬菜', 'kg', 10, 3),
+  (5, 'ນ້ຳມັນພືດ', 'น้ำมันพืช', 'Cooking oil', '食用油', 'ຂວດ', 12, 4);
 
 -- ເມນູ (tbl_product) ----------------------------------------
--- img: ເສັ້ນທາງຮູບໃນໂຟນເດີ images/menu/ — ລາຍການທີ່ຍັງບໍ່ມີໄຟລ໌ຮູບ ໃສ່ NULL
---      ໜ້າຈໍຈະສະແດງ emoji ແທນ (ບໍ່ໃຫ້ຮູບແຕກ)
--- cate_id ບໍ່ຕ້ອງໃສ່ມື — ຜູກຈາກ cat_key ດ້ວຍ UPDATE ຂ້າງລຸ່ມ
+-- img: ເສັ້ນທາງຮູບໃນໂຟນເດີ images/menu/ — ບໍ່ມີຮູບໃສ່ NULL (ໜ້າຈໍຈະສະແດງ emoji ແທນ)
 INSERT INTO tbl_product
   (prod_id, name_lo, name_th, name_en, name_zh,
    desc_lo, desc_th, desc_en, desc_zh, cat_key, price, qty_stock, emoji, img, status) VALUES
-  (1,  'ຂ້າວໜຽວ',   'ข้าวเหนียว', 'Sticky Rice',       '糯米饭',
-       'ຂ້າວໜຽວຫຸງສຸກ',      'ข้าวเหนียวหุงสุก',   'Steamed sticky rice',           '蒸糯米饭',
-       'rice',    5000,  99, '🍚', 'images/menu/01_sticky_rice.jpg',     'active'),
-  (2,  'ຂ້າວຜັດ',    'ข้าวผัด',    'Fried Rice',        '炒饭',
-       'ຜັດໄຂ່ ຜັກ ສົດ',     'ผัดไข่ ผัก สด',      'Egg & vegetable fried rice',    '鸡蛋蔬菜炒饭',
-       'rice',   35000,  50, '🍳', 'images/menu/02_fried_rice.jpg',      'active'),
-  (3,  'ຂ້າວໝູ',     'ข้าวหมู',    'Pork Rice',         '猪肉饭',
-       'ຂ້າວໝູແດງ ຊອດ',      'ข้าวหมูแดง ซอส',     'BBQ pork over rice',            '叉烧饭配酱汁',
-       'rice',   30000,  40, '🥩', 'images/menu/03_pork_rice.jpg',       'active'),
-  (4,  'ລາບໝູ',      'ลาบหมู',     'Pork Laab',         '猪肉拉帕',
-       'ດິບ / ສຸກ',           'ดิบ / สุก',          'Raw or cooked style',           '生/熟皆可',
-       'rice',   40000,  30, '🥗', 'images/menu/04_pork_laab.jpg',       'active'),
-  (5,  'ຕົ້ມຍຳ',     'ต้มยำ',      'Tom Yum',           '冬阴功',
-       'ກຸ້ງ ເຜັດຮ້ອນ',       'กุ้ง เผ็ดร้อน',      'Spicy shrimp soup',             '辣虾汤',
-       'rice',   50000,  25, '🦐', 'images/menu/05_tom_yum.jpg',         'active'),
-  (6,  'ເຝີໄກ່',     'เฝอไก่',     'Chicken Pho',       '鸡肉河粉',
-       'ນ້ຳສຸບໄກ່ ເສັ້ນໃຫຍ່', 'น้ำซุปไก่ เส้นใหญ่', 'Chicken broth noodle soup',     '鸡汤宽粉',
-       'noodle', 25000,  35, '🍜', 'images/menu/06_chicken_pho.jpg',     'active'),
-  (7,  'ກ໋ວຍຈັ໊ບ',   'ก๋วยจั๊บ',   'Kuay Jab',          '卷粉汤',
-       'ເສັ້ນໃຫຍ່ ໝູ ໄຂ່',    'เส้นใหญ่ หมู ไข่',   'Wide noodle pork soup',         '宽粉猪肉汤',
-       'noodle', 30000,   5, '🍲', 'images/menu/07_kuay_jab.jpg',        'active'),
-  (8,  'ໄກ່ຍ່າງ',    'ไก่ย่าง',    'Grilled Chicken',   '烤鸡',
-       'ໄກ່ຍ່າງຟືນ ຊອດ',      'ไก่ย่างฟืน ซอส',     'Wood-fired grilled chicken',    '柴火烤鸡配酱汁',
-       'grill',  45000,  20, '🍗', 'images/menu/08_grilled_chicken.jpg', 'active'),
-  (9,  'ປາຕົ້ມ',     'ปลาต้ม',     'Steamed Fish',      '清蒸鱼',
-       'ເຄື່ອງຈ້ຳ ຫອມ',       'เครื่องจิ้ม หอม',    'Steamed fish with herbs',       '香草蒸鱼',
-       'grill',  60000,   3, '🐟', 'images/menu/09_steamed_fish.jpg',    'soldout'),
-  (10, 'ເບຍລາວ',     'เบียลาว',    'Beerlao',           '老挝啤酒',
-       'ຂວດ 640ml ເຢັນ',      'ขวด 640ml เย็น',     '640ml bottle chilled',          '640ml冰镇瓶装',
-       'drink',  20000,  80, '🍺', NULL,                                 'active'),
-  (11, 'ນ້ຳໝາກໄມ້',  'น้ำผลไม้',   'Fruit Juice',       '果汁',
-       'ສົ້ມ / ໝາກນາວ ເຢັນ',  'ส้ม / มะนาว เย็น',   'Orange / lime, chilled',        '橙汁/柠檬汁冰镇',
-       'drink',  15000,  60, '🧃', 'images/menu/11_fruit_juice.jpg',     'active'),
-  (12, 'ນ້ຳດ່ຽວ',    'น้ำดื่ม',    'Water',             '饮用水',
-       'ນ້ຳເຢັນ 600ml',        'น้ำเย็น 600ml',      'Cold water 600ml',              '冰水600ml',
-       'drink',   5000, 100, '💧', NULL,                                 'active'),
-  (13, 'ຂ້າວໜົມ',    'ข้าวหนม',    'Rice Cake',         '米糕',
-       'ຂ້າວໜົມຫໍ່ ງາ',       'ข้าวหนมห่อ งา',      'Wrapped rice cake, sesame',     '芝麻糯米糕',
-       'dessert', 8000,  15, '🍡', 'images/menu/13_rice_cake.jpg',       'active'),
-  (14, 'ຂ້າວຕົ້ມ',   'ข้าวต้ม',    'Rice Porridge',     '米粥',
-       'ຂ້າວຕົ້ມ ໝາກພ້າວ',    'ข้าวต้ม มะพร้าว',    'Coconut rice porridge',         '椰汁米粥',
-       'dessert', 12000,   0, '🧆', 'images/menu/14_rice_porridge.jpg',  'soldout');
+  (1, 'ຂ້າວໜຽວ', 'ຂ້າວໜຽວ', 'ຂ້າວໜຽວ', 'ຂ້າວໜຽວ',
+   'ຂ້າວໜຽວຫຸງສຸກ', 'ข้าวเหนียวหุงสุก', 'Steamed sticky rice', '蒸糯米饭',
+   'rice', 5000, 112, '🍚', 'images/menu/p20260810_071014_b4e96e65.jpg', 'active'),
+  (2, 'ຂ້າວຜັດ', NULL, NULL, NULL,
+   'ຜັດໄຂ່ ຜັກ ສົດ', 'ผัดไข่ ผัก สด', 'Egg & vegetable fried rice', '鸡蛋蔬菜炒饭',
+   'rice', 35000, 52, '🍳', 'images/menu/02_fried_rice.jpg', 'active'),
+  (3, 'ຂ້າວໝູ', NULL, NULL, NULL,
+   'ຂ້າວໝູແດງ ຊອດ', 'ข้าวหมูแดง ซอส', 'BBQ pork over rice', '叉烧饭配酱汁',
+   'rice', 30000, 44, '🥩', 'images/menu/03_pork_rice.jpg', 'active'),
+  (4, 'ລາບໝູ', 'ລາບໝູ', 'ລາບໝູ', 'ລາບໝູ',
+   'ດິບ / ສຸກ', 'ดิบ / สุก', 'Raw or cooked style', '生/熟皆可',
+   'rice', 40000, 30, '🥗', 'images/menu/p20260810_072349_ac1302a4.jpg', 'active'),
+  (5, 'ຕົ້ມຍຳ', NULL, NULL, NULL,
+   'ກຸ້ງ ເຜັດຮ້ອນ', 'กุ้ง เผ็ดร้อน', 'Spicy shrimp soup', '辣虾汤',
+   'rice', 50000, 25, '🦐', 'images/menu/05_tom_yum.jpg', 'active'),
+  (6, 'ເຝີໄກ່', 'ເຝີໄກ່', 'ເຝີໄກ່', 'ເຝີໄກ່',
+   'ນ້ຳສຸບໄກ່ ເສັ້ນໃຫຍ່', 'น้ำซุปไก่ เส้นใหญ่', 'Chicken broth noodle soup', '鸡汤宽粉',
+   'noodle', 25000, 35, '🍜', 'images/menu/p20260810_072402_b4f1a001.jpg', 'active'),
+  (7, 'ກ໋ວຍຈັ໊ບ', 'ກ໋ວຍຈັ໊ບ', 'ກ໋ວຍຈັ໊ບ', 'ກ໋ວຍຈັ໊ບ',
+   'ເສັ້ນໃຫຍ່ ໝູ ໄຂ່', 'เส้นใหญ่ หมู ไข่', 'Wide noodle pork soup', '宽粉猪肉汤',
+   'noodle', 30000, 5, '🍲', 'images/menu/p20260810_072414_e8254613.jpg', 'active'),
+  (8, 'ໄກ່ຍ່າງ', NULL, NULL, NULL,
+   'ໄກ່ຍ່າງຟືນ ຊອດ', 'ไก่ย่างฟืน ซอส', 'Wood-fired grilled chicken', '柴火烤鸡配酱汁',
+   'grill', 45000, 20, '🍗', 'images/menu/08_grilled_chicken.jpg', 'active'),
+  (9, 'ປາຕົ້ມ', NULL, NULL, NULL,
+   'ເຄື່ອງຈ້ຳ ຫອມ', 'เครื่องจิ้ม หอม', 'Steamed fish with herbs', '香草蒸鱼',
+   'grill', 60000, 3, '🐟', 'images/menu/09_steamed_fish.jpg', 'soldout'),
+  (10, 'ເບຍລາວ', 'ເບຍລາວ', 'ເບຍລາວ', 'ເບຍລາວ',
+   'ຂວດ 640ml ເຢັນ', 'ขวด 640ml เย็น', '640ml bottle chilled', '640ml冰镇瓶装',
+   'drink', 20000, 84, '🍺', 'images/menu/p20260810_071037_2cb0eff6.jpg', 'active'),
+  (11, 'ນ້ຳໝາກໄມ້', 'ນ້ຳໝາກໄມ້', 'ນ້ຳໝາກໄມ້', 'ນ້ຳໝາກໄມ້',
+   'ສົ້ມ / ໝາກນາວ ເຢັນ', 'ส้ม / มะนาว เย็น', 'Orange / lime, chilled', '橙汁/柠檬汁冰镇',
+   'drink', 15000, 45, '🧃', 'images/menu/p20260810_072537_36610758.jpg', 'active'),
+  (12, 'ນ້ຳດືມ', 'ນ້ຳດືມ', 'ນ້ຳດືມ', 'ນ້ຳດືມ',
+   'ນ້ຳເຢັນ 600ml', 'น้ำเย็น 600ml', 'Cold water 600ml', '冰水600ml',
+   'drink', 5000, 80, '💧', 'images/menu/p20260810_072530_f2055666.jpg', 'active'),
+  (13, 'ຂ້າວໜົມ', NULL, NULL, NULL,
+   'ຂ້າວໜົມຫໍ່ ງາ', 'ข้าวหนมห่อ งา', 'Wrapped rice cake, sesame', '芝麻糯米糕',
+   'dessert', 8000, 15, '🍡', 'images/menu/13_rice_cake.jpg', 'active'),
+  (1786339659251, 'bounkeo', 'bounkeo', 'bounkeo', 'bounkeo',
+   '', '', '', '',
+   'drink', 30000, 49, '🥤', 'images/menu/p20260810_072733_47a39316.jpg', 'active');
 
 -- ຜູກຄີນອກ tbl_product.cate_id ຈາກ cat_key (ຄືກັບທີ່ api/index.php ເຮັດ)
 UPDATE tbl_product p

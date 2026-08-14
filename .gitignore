@@ -13,8 +13,10 @@ Desktop.ini
 *.tmp
 *.bak
 
-# Uploaded files at runtime (keep the seeded menu images)
-images/uploads/
+# NOTE: images/menu/ is deliberately NOT ignored.
+# api/upload.php saves menu photos straight into images/menu/, so ignoring
+# them would ship the project with the original photos and leave anyone who
+# clones it looking at images the shop replaced long ago.
 
 # Per-machine DB overrides (port / password) — must never be shared
 api/config.local.php
