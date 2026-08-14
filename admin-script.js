@@ -1022,7 +1022,9 @@ const REPORT_META = {
   drink:    { title:'5.1 🥤 ລາຍງານເຄື່ອງດື່ມ',    chart:'ສະຕັອກເຄື່ອງດື່ມແຕ່ລະລາຍການ', table:'ລາຍການເຄື່ອງດື່ມທັງໝົດ', period:false },
   material: { title:'5.2 🥩 ລາຍງານວັດຖຸດິບ',     chart:'ຄົງເຫຼືອວັດຖຸດິບ',            table:'ລາຍການວັດຖຸດິບທັງໝົດ',  period:false },
   purchase: { title:'5.3 🧾 ລາຍງານການສັ່ງຊື້',    chart:'ມູນຄ່າສັ່ງຊື້ຕາມວັນ',         table:'ໃບສັ່ງຊື້ທັງໝົດ',       period:true  },
-  import:   { title:'5.4 📥 ລາຍງານການນຳເຂົ້າ',   chart:'ຈຳນວນນຳເຂົ້າຕາມວັນ',         table:'ການນຳເຂົ້າທັງໝົດ',      period:true  },
+  // 5.4 ແຍກເປັນ 2 ໃບ ຕາມ D8 / D9 ໃນເອກສານ
+  importDrink:    { title:'5.4.1 🥤 ລາຍງານນຳເຂົ້າເຄື່ອງດື່ມ', chart:'ຈຳນວນເຄື່ອງດື່ມນຳເຂົ້າຕາມວັນ', table:'ລາຍການນຳເຂົ້າເຄື່ອງດື່ມ (D8)', period:true },
+  importMaterial: { title:'5.4.2 🥩 ລາຍງານນຳເຂົ້າວັດຖຸດິບ',  chart:'ຈຳນວນວັດຖຸດິບນຳເຂົ້າຕາມວັນ',  table:'ລາຍການນຳເຂົ້າວັດຖຸດິບ (D9)',  period:true },
   sales:    { title:'5.5 📈 ລາຍງານການຂາຍສິນຄ້າ', chart:null,                          table:null,                     period:true  },
 };
 
@@ -1194,28 +1196,71 @@ function renderSubReport(type) {
     drawWhenLaidOut(() => drawReportBars(ps.labels, ps.values, '#f39c12', '#f8c471'));
   }
 
-  if (type === 'import') {
-    const imps = POS_DB.imports.getAll();
-    kpiEl.innerHTML =
-      kpiCard('📥', imps.length, 'ຄັ້ງທີ່ນຳເຂົ້າ', '', 'neu', true)
-      + kpiCard('💰', fmt(imps.reduce((s, i) => s + i.total, 0)), 'ມູນຄ່າລວມ', i18n.t('currency'), 'neu')
-      + kpiCard('🧾', POS_DB.purchases.getPending().length, 'ໃບສັ່ງຊື້ຄ້າງ', '', 'down')
-      + kpiCard('📦', imps.reduce((s, i) => s + i.items.reduce((a, x) => a + x.qty, 0), 0), 'ຈຳນວນລວມ', '', 'up');
-    tableEl.innerHTML = `<thead><tr><th>ເລກທີ</th><th>ວັນທີ</th><th>ອ້າງອີງໃບສັ່ງຊື້</th><th>ລາຍການ</th><th>ມູນຄ່າ</th><th>ຜູ້ຮັບ</th></tr></thead>
-      <tbody>${imps.map(im => `<tr>
-        <td><b class="mono">#${im.id}</b></td>
-        <td style="font-size:0.8rem;color:var(--muted)">${POS_DB.fmtDateTime(im.imp_date || im.date)}</td>
-        <td>${im.purId
-              ? `<span class="badge badge-blue">#${im.purId}</span>`
-              : `<span class="badge badge-yellow">ໂດຍກົງ</span>`}</td>
-        <td style="font-size:0.82rem">${im.items.map(i => `${i.name} x${i.qty}`).join(', ')}</td>
-        <td><b>${fmt(im.total)}</b> ${i18n.t('currency')}</td>
-        <td>${im.userName || '-'}</td>
-      </tr>`).join('')}</tbody>`;
-    const is = dailySeries(imps, im => im.imp_date || im.date,
-                           im => im.items.reduce((a, x) => a + x.qty, 0), reportDays());
-    drawWhenLaidOut(() => drawReportBars(is.labels, is.values, '#9b59b6', '#bb8fce'));
+  if (type === 'importDrink') {
+    renderImportKindReport('drink', kpiEl, tableEl,
+      { icon:'🥤', itemsKpi:'ຊະນິດເຄື່ອງດື່ມ', col:'ເຄື່ອງດື່ມ' }, '#3498db', '#5dade2');
   }
+
+  if (type === 'importMaterial') {
+    renderImportKindReport('material', kpiEl, tableEl,
+      { icon:'🥩', itemsKpi:'ຊະນິດວັດຖຸດິບ', col:'ວັດຖຸດິບ' }, '#2ecc71', '#58d68d');
+  }
+}
+
+/* ໃບນຳເຂົ້າໜຶ່ງໃບມີຫຼາຍປະເພດປົນກັນໄດ້ (ເຄື່ອງດື່ມ + ວັດຖຸດິບ ໃນໃບດຽວ)
+   ແຕ່ D8 ແລະ D9 ໃນເອກສານເປັນຄົນລະ store ຈຶ່ງຕ້ອງ "ແຕກໃບອອກເປັນລາຍແຖວ"
+   ແລ້ວຄັດສະເພາະ kind ທີ່ຕ້ອງການ — ຄັດທັງໃບຈະໄດ້ຂໍ້ມູນປົນ ຫຼື ຕົກຫຼົ່ນ */
+function importLines(kind) {
+  const out = [];
+  POS_DB.imports.getAll().forEach(im => {
+    (im.items || []).filter(i => i.kind === kind).forEach(i => out.push({
+      impId: im.id,
+      date:  im.imp_date || im.date,
+      purId: im.purId,
+      user:  im.userName,
+      name:  i.name,
+      qty:   i.qty,
+      price: i.price || 0,
+      total: i.qty * (i.price || 0),
+    }));
+  });
+  return out;
+}
+
+/* 5.4.1 (D8) ແລະ 5.4.2 (D9) ໃຊ້ໂຄງດຽວກັນ ຕ່າງກັນແຕ່ kind ກັບປ້າຍຊື່ */
+function renderImportKindReport(kind, kpiEl, tableEl, label, c1, c2) {
+  const lines = importLines(kind);
+  // ນັບ "ຄັ້ງ" ຈາກເລກໃບທີ່ບໍ່ຊ້ຳ — ໃບດຽວທີ່ມີ 3 ແຖວ ຕ້ອງນັບເປັນ 1 ຄັ້ງ
+  const times = new Set(lines.map(l => l.impId)).size;
+  const qty   = lines.reduce((s, l) => s + l.qty, 0);
+  const value = lines.reduce((s, l) => s + l.total, 0);
+  const kinds = new Set(lines.map(l => l.name)).size;
+
+  kpiEl.innerHTML =
+    kpiCard('📥', times, 'ຄັ້ງທີ່ນຳເຂົ້າ', '', 'neu', true)
+    + kpiCard('📦', qty, 'ຈຳນວນລວມ', '', 'up')
+    + kpiCard('💰', fmt(value), 'ມູນຄ່າລວມ', i18n.t('currency'), 'neu')
+    + kpiCard(label.icon, kinds, label.itemsKpi, '', 'neu');
+
+  tableEl.innerHTML = `<thead><tr>
+      <th>ເລກທີ</th><th>ວັນທີ</th><th>ອ້າງອີງ</th><th>${label.col}</th>
+      <th>ຈຳນວນ</th><th>ຕົ້ນທຶນ/ໜ່ວຍ</th><th>ລວມ</th><th>ຜູ້ຮັບ</th>
+    </tr></thead>
+    <tbody>${lines.map(l => `<tr>
+      <td><b class="mono">#${l.impId}</b></td>
+      <td style="font-size:0.8rem;color:var(--muted)">${POS_DB.fmtDateTime(l.date)}</td>
+      <td>${l.purId
+            ? `<span class="badge badge-blue">#${l.purId}</span>`
+            : `<span class="badge badge-yellow">ໂດຍກົງ</span>`}</td>
+      <td><b>${l.name}</b></td>
+      <td><b>${l.qty}</b></td>
+      <td>${fmt(l.price)}</td>
+      <td><b>${fmt(l.total)}</b> ${i18n.t('currency')}</td>
+      <td>${l.user || '-'}</td>
+    </tr>`).join('')}</tbody>`;
+
+  const s = dailySeries(lines, l => l.date, l => l.qty, reportDays());
+  drawWhenLaidOut(() => drawReportBars(s.labels, s.values, c1, c2));
 }
 
 // ════════════════════════════════
@@ -1677,13 +1722,15 @@ function exportCSV() {
       p.items.map(i => `${i.name} x${i.qty}`).join(' | '), p.total, p.userName, p.status]));
     name = 'report_purchase';
 
-  } else if (type === 'import') {
-    rows = [['ເລກທີ', 'ວັນທີ', 'ອ້າງອີງໃບສັ່ງຊື້', 'ລາຍການ', 'ມູນຄ່າ', 'ຜູ້ຮັບ']];
-    POS_DB.imports.getAll().forEach(im => rows.push([
-      im.id, POS_DB.fmtDateTime(im.imp_date || im.date),
-      im.purId ? '#' + im.purId : 'ໂດຍກົງ',
-      im.items.map(i => `${i.name} x${i.qty}`).join(' | '), im.total, im.userName]));
-    name = 'report_import';
+  } else if (type === 'importDrink' || type === 'importMaterial') {
+    const kind = type === 'importDrink' ? 'drink' : 'material';
+    rows = [['ເລກທີ', 'ວັນທີ', 'ອ້າງອີງ',
+             kind === 'drink' ? 'ເຄື່ອງດື່ມ' : 'ວັດຖຸດິບ',
+             'ຈຳນວນ', 'ຕົ້ນທຶນ/ໜ່ວຍ', 'ລວມ', 'ຜູ້ຮັບ']];
+    importLines(kind).forEach(l => rows.push([
+      l.impId, POS_DB.fmtDateTime(l.date), l.purId ? '#' + l.purId : 'ໂດຍກົງ',
+      l.name, l.qty, l.price, l.total, l.user]));
+    name = kind === 'drink' ? 'report_import_drink' : 'report_import_material';
 
   } else {
     rows = [[i18n.t('tbl.order'), i18n.t('tbl.table'), i18n.t('tbl.items'),
