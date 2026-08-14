@@ -372,15 +372,20 @@
         <!-- ══ REPORTS ══ -->
         <section class="page" id="page-reports">
           <div class="page-top-row">
-            <div class="page-title" data-i18n="rep.title">รายงานยอดขาย</div>
+            <!-- ຫົວຂໍ້/ຊື່ຕາຕະລາງຖືກຕັ້ງຈາກ JS ຕາມປະເພດລາຍງານ ຈຶ່ງບໍ່ໃສ່ data-i18n
+                 (ບໍ່ງັ້ນຕົວແປພາສາຈະຂຽນທັບກັບເປັນຫົວຂໍ້ "ຍອດຂາຍ" ທຸກປະເພດ) -->
+            <div class="page-title" id="reportTitle">📈 ລາຍງານ</div>
             <div class="page-actions">
+              <!-- 5 ປະເພດ ຕາມແຜນພາບລວມຂອງລະບົບ ຂໍ້ 5.1–5.5 -->
               <select class="filter-select" id="reportType" onchange="renderReportsPage()">
-                <option value="sales">📈 ລາຍງານການຂາຍ</option>
-                <option value="drink">🥤 ລາຍງານເຄື່ອງດື່ມ</option>
-                <option value="material">🥩 ລາຍງານວັດຖຸດິບ</option>
-                <option value="purchase">🧾 ລາຍງານການສັ່ງຊື້</option>
-                <option value="import">📥 ລາຍງານການນຳເຂົ້າ</option>
+                <option value="drink">5.1 🥤 ລາຍງານເຄື່ອງດື່ມ</option>
+                <option value="material">5.2 🥩 ລາຍງານວັດຖຸດິບ</option>
+                <option value="purchase">5.3 🧾 ລາຍງານການສັ່ງຊື້</option>
+                <option value="import">5.4 📥 ລາຍງານການນຳເຂົ້າ</option>
+                <option value="sales" selected>5.5 📈 ລາຍງານການຂາຍສິນຄ້າ</option>
               </select>
+              <!-- ຊ່ວງເວລາໃຊ້ໄດ້ສະເພາະລາຍງານທີ່ອີງເວລາ — ເຄື່ອງດື່ມ/ວັດຖຸດິບ
+                   ເປັນ "ພາບຄົງເຫຼືອ ณ ຕອນນີ້" ຈຶ່ງເຊື່ອງໃຫ້ ບໍ່ໃຫ້ເຂົ້າໃຈຜິດ -->
               <select class="filter-select" id="reportPeriod" onchange="renderReportsPage()">
                 <option value="7" data-i18n="rep.7days">7 วัน</option>
                 <option value="30" data-i18n="rep.30days">30 วัน</option>
@@ -393,10 +398,10 @@
 
           <div class="charts-row">
             <div class="chart-card wide">
-              <div class="chart-header"><div class="chart-title" data-i18n="rep.daily">ยอดขายรายวัน</div></div>
+              <div class="chart-header"><div class="chart-title" id="reportChartTitle">ຍອດຂາຍລາຍວັນ</div></div>
               <canvas id="reportChart" height="220"></canvas>
             </div>
-            <div class="chart-card">
+            <div class="chart-card" id="catChartCard">
               <div class="chart-header"><div class="chart-title" data-i18n="rep.category">สัดส่วนหมวดหมู่</div></div>
               <canvas id="catChart" height="220"></canvas>
             </div>
@@ -404,7 +409,7 @@
 
           <div class="section-card">
             <div class="sc-header">
-              <div class="sc-title" data-i18n="rep.all">รายการขายทั้งหมด</div>
+              <div class="sc-title" id="reportTableTitle">ລາຍການຂາຍທັງໝົດ</div>
               <button class="sc-link" onclick="exportCSV()" data-i18n="rep.export">⬇ Export CSV</button>
             </div>
             <div class="table-wrap">
@@ -811,8 +816,8 @@
   <!-- ════════ TOAST ════════ -->
   <div class="toast-stack" id="toastStack"></div>
 
-  <script src="I18n.js?v=17"></script>
-  <script src="Db.js?v=17"></script>
-  <script src="admin-script.js?v=17"></script>
+  <script src="I18n.js?v=18"></script>
+  <script src="Db.js?v=18"></script>
+  <script src="admin-script.js?v=18"></script>
 </body>
 </html>

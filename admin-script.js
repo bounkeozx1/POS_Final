@@ -418,7 +418,9 @@ function drawSalesChart(canvasId, mode) {
     const dayTotal = DB.orders
       .filter(o => o.status === 'done' && o.dateKey === dateKey)
       .reduce((s, o) => s + o.total, 0);
-    values.push(dayTotal || Math.round(Math.random() * 400000 + 50000));
+    // ວັນທີ່ບໍ່ມີການຂາຍຕ້ອງເປັນ 0 — ແຕ່ກ່ອນໃສ່ເລກສຸ່ມ 50k–450k ແທນ
+    // ເຮັດໃຫ້ລາຍງານສະແດງຍອດທີ່ບໍ່ມີຢູ່ຈິງ ແລະ ອ່ານທຽບກັບ MySQL ບໍ່ໄດ້
+    values.push(dayTotal);
   }
 
   drawBarChart(ctx, canvas, labels, values, '#ff6b35', '#ffb347');
@@ -1007,8 +1009,81 @@ function saveStock() {
 // ════════════════════════════════
 // 11. REPORTS PAGE
 // ════════════════════════════════
+/* ຄີຂອງໝວດທີ່ນັບເປັນ "ເຄື່ອງດື່ມ" — ອີງ type ຂອງໝວດ (tbl_category.type)
+   ບໍ່ແມ່ນທຽບ cat === 'drink' ຕົງ ໆ ຮ້ານເພີ່ມໝວດເຄື່ອງດື່ມໃໝ່ໄດ້ ແລ້ວ
+   ລາຍງານຈະນັບໃຫ້ເອງ ບໍ່ຕົກຫຼົ່ນ */
+function drinkCatKeys() {
+  return new Set(POS_DB.categories.getAll().filter(c => c.type === 'drink').map(c => c.cat));
+}
+
+/* 5 ປະເພດລາຍງານ ຕາມແຜນພາບລວມຂອງລະບົບ ຂໍ້ 5.1–5.5
+   period:false = ລາຍງານແບບ "ພາບຄົງເຫຼືອ ณ ຕອນນີ້" ບໍ່ໄດ້ອີງຊ່ວງເວລາ */
+const REPORT_META = {
+  drink:    { title:'5.1 🥤 ລາຍງານເຄື່ອງດື່ມ',    chart:'ສະຕັອກເຄື່ອງດື່ມແຕ່ລະລາຍການ', table:'ລາຍການເຄື່ອງດື່ມທັງໝົດ', period:false },
+  material: { title:'5.2 🥩 ລາຍງານວັດຖຸດິບ',     chart:'ຄົງເຫຼືອວັດຖຸດິບ',            table:'ລາຍການວັດຖຸດິບທັງໝົດ',  period:false },
+  purchase: { title:'5.3 🧾 ລາຍງານການສັ່ງຊື້',    chart:'ມູນຄ່າສັ່ງຊື້ຕາມວັນ',         table:'ໃບສັ່ງຊື້ທັງໝົດ',       period:true  },
+  import:   { title:'5.4 📥 ລາຍງານການນຳເຂົ້າ',   chart:'ຈຳນວນນຳເຂົ້າຕາມວັນ',         table:'ການນຳເຂົ້າທັງໝົດ',      period:true  },
+  sales:    { title:'5.5 📈 ລາຍງານການຂາຍສິນຄ້າ', chart:null,                          table:null,                     period:true  },
+};
+
+/* ຕັ້ງຫົວຂໍ້ໜ້າ/ຊື່ກຣາຟ/ຊື່ຕາຕະລາງ ໃຫ້ຕົງກັບປະເພດທີ່ເລືອກ
+   ແຕ່ກ່ອນຫົວຂໍ້ຄ້າງເປັນ "ຍອດຂາຍ" ທຸກປະເພດ ຈຶ່ງເບິ່ງຄືບໍ່ໄດ້ແຍກລາຍງານເລີຍ */
+function applyReportChrome(type) {
+  const m = REPORT_META[type] || REPORT_META.sales;
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  set('reportTitle',      m.title);
+  set('reportChartTitle', m.chart || i18n.t('rep.daily'));
+  set('reportTableTitle', m.table || i18n.t('rep.all'));
+  // ວົງກົມສັດສ່ວນໝວດເປັນຂອງຍອດຂາຍໂດຍສະເພາະ — ປະເພດອື່ນເຊື່ອງໄວ້
+  const cat = document.getElementById('catChartCard');
+  if (cat) cat.style.display = type === 'sales' ? '' : 'none';
+  const per = document.getElementById('reportPeriod');
+  if (per) per.style.display = m.period ? '' : 'none';
+}
+
+function reportDays() {
+  return parseInt(document.getElementById('reportPeriod')?.value) || 7;
+}
+
+/* canvas ຕ້ອງມີຄວາມກວ້າງຈິງກ່ອນຈຶ່ງວາດຖືກ — ລໍ 2 ເຟຣມຄືກັບກຣາຟຍອດຂາຍ
+   (ເຟຣມດຽວບໍ່ພໍ ຕອນຫາກໍ່ສະຫຼັບໜ້າ clientWidth ຍັງເປັນ 0) */
+function drawWhenLaidOut(fn) {
+  requestAnimationFrame(() => requestAnimationFrame(fn));
+}
+
+/* ວາດກຣາຟແທ່ງຂອງລາຍງານ — ກັນກໍລະນີບໍ່ມີຂໍ້ມູນ ບໍ່ໃຫ້ແກນເປັນ NaN */
+function drawReportBars(labels, values, c1, c2) {
+  const canvas = document.getElementById('reportChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!labels.length) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+  drawBarChart(ctx, canvas, labels, values, c1, c2);
+}
+
+/* ຍອດລວມແຕ່ລະວັນຍ້ອນຫຼັງ N ວັນ — ໃຊ້ຮ່ວມກັນລະຫວ່າງລາຍງານສັ່ງຊື້/ນຳເຂົ້າ
+   pick() ຄືນຄ່າທີ່ຢາກບວກຂອງແຖວນັ້ນ (ມູນຄ່າ ຫຼື ຈຳນວນ) */
+function dailySeries(rows, dateOf, pick, days) {
+  const labels = [], values = [];
+  const now = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toLocaleDateString('en-CA');
+    labels.push(d.getDate() + '');
+    values.push(rows.filter(r => {
+      const rd = dateOf(r);
+      return rd && new Date(rd).toLocaleDateString('en-CA') === key;
+    }).reduce((s, r) => s + pick(r), 0));
+  }
+  return { labels, values };
+}
+
 function renderReportsPage() {
   const type = document.getElementById('reportType')?.value || 'sales';
+  applyReportChrome(type);
   if (type !== 'sales') { renderSubReport(type); return; }
   const period = parseInt(document.getElementById('reportPeriod')?.value || 7);
   const filtered = DB.orders.filter(o => o.status === 'done');
@@ -1056,7 +1131,8 @@ function renderSubReport(type) {
   const tableEl = document.getElementById('reportTable');
 
   if (type === 'drink') {
-    const drinks = POS_DB.products.getAll().filter(p => p.cat === 'drink');
+    const dk = drinkCatKeys();
+    const drinks = POS_DB.products.getAll().filter(p => dk.has(p.cat));
     // นับยอดขายเครื่องดื่มจากรายละเอียดการขาย (tbl_sale_detail)
     const sold = {};
     POS_DB.orders.getAll().filter(o => o.status === 'done').forEach(o => {
@@ -1075,6 +1151,8 @@ function renderSubReport(type) {
         <td>${sold[d.id] || 0}</td>
         <td>${d.status === 'active' ? '<span class="badge badge-green">✅</span>' : '<span class="badge badge-red">❌</span>'}</td>
       </tr>`).join('')}</tbody>`;
+    drawWhenLaidOut(() => drawReportBars(
+      drinks.map(d => localName(d)), drinks.map(d => d.stock), '#3498db', '#5dade2'));
   }
 
   if (type === 'material') {
@@ -1092,6 +1170,8 @@ function renderSubReport(type) {
         <td style="color:var(--muted)">${m.min}</td>
         <td>${m.stock <= m.min ? '<span class="badge badge-red">⚠️ ຕ້ອງສັ່ງຊື້</span>' : '<span class="badge badge-green">✅ ພຽງພໍ</span>'}</td>
       </tr>`).join('')}</tbody>`;
+    drawWhenLaidOut(() => drawReportBars(
+      mats.map(m => localName(m)), mats.map(m => m.stock), '#2ecc71', '#58d68d'));
   }
 
   if (type === 'purchase') {
@@ -1110,6 +1190,8 @@ function renderSubReport(type) {
         <td>${p.userName || '-'}</td>
         <td>${p.status === 'imported' ? '<span class="badge badge-green">✅ ນຳເຂົ້າແລ້ວ</span>' : '<span class="badge badge-yellow">⏳ ລໍຖ້າ</span>'}</td>
       </tr>`).join('')}</tbody>`;
+    const ps = dailySeries(pos, p => p.pur_date || p.date, p => p.total || 0, reportDays());
+    drawWhenLaidOut(() => drawReportBars(ps.labels, ps.values, '#f39c12', '#f8c471'));
   }
 
   if (type === 'import') {
@@ -1123,11 +1205,16 @@ function renderSubReport(type) {
       <tbody>${imps.map(im => `<tr>
         <td><b class="mono">#${im.id}</b></td>
         <td style="font-size:0.8rem;color:var(--muted)">${POS_DB.fmtDateTime(im.imp_date || im.date)}</td>
-        <td><span class="badge badge-blue">#${im.purId}</span></td>
+        <td>${im.purId
+              ? `<span class="badge badge-blue">#${im.purId}</span>`
+              : `<span class="badge badge-yellow">ໂດຍກົງ</span>`}</td>
         <td style="font-size:0.82rem">${im.items.map(i => `${i.name} x${i.qty}`).join(', ')}</td>
         <td><b>${fmt(im.total)}</b> ${i18n.t('currency')}</td>
         <td>${im.userName || '-'}</td>
       </tr>`).join('')}</tbody>`;
+    const is = dailySeries(imps, im => im.imp_date || im.date,
+                           im => im.items.reduce((a, x) => a + x.qty, 0), reportDays());
+    drawWhenLaidOut(() => drawReportBars(is.labels, is.values, '#9b59b6', '#bb8fce'));
   }
 }
 
@@ -1290,8 +1377,7 @@ function stockItemOptions(kind) {
       ? ms.map(m => `<option value="${m.id}">${localName(m)} (ຄົງເຫຼືອ: ${m.stock} ${m.unit})</option>`).join('')
       : '<option value="">— ຍັງບໍ່ມີວັດຖຸດິບ —</option>';
   }
-  const drinkCats = new Set(POS_DB.categories.getAll()
-    .filter(c => c.type === 'drink').map(c => c.cat));
+  const drinkCats = drinkCatKeys();
   const ps = POS_DB.products.getAll()
     .filter(p => kind === 'drink' ? drinkCats.has(p.cat) : !drinkCats.has(p.cat));
   return ps.length
@@ -1564,13 +1650,53 @@ function updateKitchenBadge() {
   if (badge) { badge.textContent = n; badge.dataset.count = n; }
 }
 
+/* Export ຕາມປະເພດລາຍງານທີ່ກຳລັງເປີດຢູ່ — ແຕ່ກ່ອນສົ່ງອອກ "ບິນຂາຍ" ສະເໝີ
+   ເປີດລາຍງານວັດຖຸດິບແລ້ວກົດ Export ກໍ່ຍັງໄດ້ໄຟລ໌ບິນຂາຍ ເຊິ່ງຜິດ */
 function exportCSV() {
-  const rows = [[i18n.t('tbl.order'),i18n.t('tbl.table'),i18n.t('tbl.items'),i18n.t('tbl.total'),i18n.t('tbl.time'),i18n.t('tbl.status')]];
-  DB.orders.forEach(o => rows.push([o.num, orderTable(o), '"'+orderItemsText(o)+'"', o.total, o.time, o.status]));
-  const csv = rows.map(r => r.join(',')).join('\n');
+  const type = document.getElementById('reportType')?.value || 'sales';
+  // ຫຸ້ມທຸກຊ່ອງ: ຊື່ເມນູ/ໝາຍເຫດ ມີ , ແລະ " ໄດ້ ຖ້າບໍ່ escape ຖັນຈະເລື່ອນ
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  let rows, name;
+
+  if (type === 'drink') {
+    const dk = drinkCatKeys();
+    const drinks = POS_DB.products.getAll().filter(p => dk.has(p.cat));
+    rows = [['ເຄື່ອງດື່ມ', 'ລາຄາ', 'ສະຕັອກ', 'ສະຖານະ']];
+    drinks.forEach(d => rows.push([localName(d), d.price, d.stock, d.status]));
+    name = 'report_drink';
+
+  } else if (type === 'material') {
+    rows = [['ວັດຖຸດິບ', 'ຫົວໜ່ວຍ', 'ຄົງເຫຼືອ', 'ຂັ້ນຕ່ຳ']];
+    POS_DB.materials.getAll().forEach(m => rows.push([localName(m), m.unit, m.stock, m.min]));
+    name = 'report_material';
+
+  } else if (type === 'purchase') {
+    rows = [['ເລກທີ', 'ວັນທີ', 'ລາຍການ', 'ມູນຄ່າ', 'ຜູ້ສັ່ງ', 'ສະຖານະ']];
+    POS_DB.purchases.getAll().forEach(p => rows.push([
+      p.id, POS_DB.fmtDateTime(p.pur_date || p.date),
+      p.items.map(i => `${i.name} x${i.qty}`).join(' | '), p.total, p.userName, p.status]));
+    name = 'report_purchase';
+
+  } else if (type === 'import') {
+    rows = [['ເລກທີ', 'ວັນທີ', 'ອ້າງອີງໃບສັ່ງຊື້', 'ລາຍການ', 'ມູນຄ່າ', 'ຜູ້ຮັບ']];
+    POS_DB.imports.getAll().forEach(im => rows.push([
+      im.id, POS_DB.fmtDateTime(im.imp_date || im.date),
+      im.purId ? '#' + im.purId : 'ໂດຍກົງ',
+      im.items.map(i => `${i.name} x${i.qty}`).join(' | '), im.total, im.userName]));
+    name = 'report_import';
+
+  } else {
+    rows = [[i18n.t('tbl.order'), i18n.t('tbl.table'), i18n.t('tbl.items'),
+             i18n.t('tbl.total'), i18n.t('tbl.time'), i18n.t('tbl.status')]];
+    DB.orders.forEach(o => rows.push([o.num, orderTable(o), orderItemsText(o), o.total, o.time, o.status]));
+    name = 'report_sales';
+  }
+
+  // BOM: ບໍ່ງັ້ນ Excel ເປີດພາສາລາວ/ໄທ ເປັນຕົວຫຍຸ້ງ
+  const csv = '﻿' + rows.map(r => r.map(q).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = 'orders_export.csv'; a.click();
+  a.download = name + '.csv'; a.click();
   showToast('⬇ ' + i18n.t('toast.exportdone'));
 }
 
